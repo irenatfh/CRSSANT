@@ -17,8 +17,7 @@ def process_cigar(pos_align, cigar_str):
         ops = ops + ['S']
     l_pos_start = pos_align + lens[0]
     l_pos_stop = l_pos_start + lens[1]
-    gap_len = lens[2]
-    r_pos_start = l_pos_stop + gap_len + lens[3]
-    r_pos_end = r_pos_start + lens[4]
+    r_pos_start = l_pos_stop + lens[2]
+    r_pos_end = r_pos_start + lens[3]
     
-    return l_pos_start, l_pos_stop, gap_len, r_pos_start, r_pos_end
+    return l_pos_start, l_pos_stop, r_pos_start, r_pos_end
