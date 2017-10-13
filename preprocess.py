@@ -3,21 +3,28 @@ import re
 
 
 ################################################################################
-def process_cigar(pos_align, cigar_str):
+def process_cigar(cigar_str):
+    # parse the cigar string into operations (ops) and operation lengths (lens)
+    ops_raw = re.findall('\D+', cigar_str)
     lens_strs = re.findall('\d+', cigar_str)
-    lens = [int(i) for i in lens_strs]
-    ops = re.findall('\D+', cigar_str)
-    M_last = ''.join(ops).rfind('M')
-    # Standardize all cigar strings to be of format S,M,N,M,S
+    lens_raw = [int(i) for i in lens_strs]
+    # merge duplicate consecutive operations
+    ops = []
+    lens = []
+    lens.append(lens_raw[0])
+    ops.append(ops_raw[0])
+    for i in range(1, len(ops_raw)):
+        if ops_raw[i] == ops_raw[i-1]:
+            lens[-1] += lens_raw[i]
+        else:
+            lens.append(lens_raw[i])
+            ops.append(ops_raw[i])
+    # Standardize all cigar strings to start and end with soft-clipped regions
     if ops[0] != 'S':
         lens = [0] + lens
         ops = ['S'] + ops
     if ops[-1] != 'S':
         lens = lens + [0]
         ops = ops + ['S']
-    l_pos_start = pos_align + lens[0]
-    l_pos_stop = l_pos_start + lens[1]
-    r_pos_start = l_pos_stop + lens[2]
-    r_pos_stop = r_pos_start + lens[3]
     
-    return l_pos_start, l_pos_stop, r_pos_start, r_pos_stop
+    return ops, lens
