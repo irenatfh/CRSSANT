@@ -41,7 +41,7 @@ def get_reads(sam_file):
         for line in f:
             if line[0] != '@':
                 data = line.split('\t')
-                read_id = int(data[0].split(':')[-1])
+                read_id = data[0]
                 pos_align = int(data[3])
                 cigar_str = data[5]
                 xg = data[19]
@@ -54,10 +54,10 @@ def get_reads(sam_file):
                         l_pos_stop = l_pos_start + cigar_lens[1] - 1
                         r_pos_start = l_pos_stop + cigar_lens[2] + 1
                         r_pos_stop = r_pos_start + cigar_lens[3] - 1
-                        reads_ids.append(line_counter)
+                        reads_ids.append(read_id)
                         reads_info.append((l_pos_start, l_pos_stop, r_pos_start, r_pos_stop, dg))
             line_counter += 1
     reads_info = np.asarray(reads_info)
-    reads_ids = np.array(range(line_counter - len(reads_info), line_counter))
+    reads_ids = np.asarray(reads_ids)
     reads_dict = dict(zip(reads_ids, reads_info))
     return reads_info, reads_ids, reads_dict
