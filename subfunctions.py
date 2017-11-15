@@ -50,7 +50,7 @@ def get_reads(sam_file):
                     cigar_ops, cigar_lens = process_cigar(cigar_str)
                     cigar_ops_set.update({tuple(cigar_ops)})
                     if cigar_ops == ['S', 'M', 'N', 'M', 'S']:
-                        l_pos_start = pos_align + cigar_lens[0]
+                        l_pos_start = pos_align
                         l_pos_stop = l_pos_start + cigar_lens[1] - 1
                         r_pos_start = l_pos_stop + cigar_lens[2] + 1
                         r_pos_stop = r_pos_start + cigar_lens[3] - 1
