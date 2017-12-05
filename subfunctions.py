@@ -1,5 +1,6 @@
 import numpy as np
 import re
+import networkx as nx
 
 
 ################################################################################
@@ -50,14 +51,26 @@ def get_reads(sam_file):
                     cigar_ops, cigar_lens = process_cigar(cigar_str)
                     cigar_ops_set.update({tuple(cigar_ops)})
                     if cigar_ops == ['S', 'M', 'N', 'M', 'S']:
-                        l_pos_start = pos_align
+                        l_pos_start = pos_align + cigar_lens[0]
                         l_pos_stop = l_pos_start + cigar_lens[1] - 1
                         r_pos_start = l_pos_stop + cigar_lens[2] + 1
                         r_pos_stop = r_pos_start + cigar_lens[3] - 1
                         reads_ids.append(read_id)
-                        reads_info.append((l_pos_start, l_pos_stop, r_pos_start, r_pos_stop, dg))
+                        reads_info.append((l_pos_start, l_pos_stop, 
+                                           r_pos_start, r_pos_stop, dg))
             line_counter += 1
     reads_info = np.asarray(reads_info)
     reads_ids = np.asarray(reads_ids)
     reads_dict = dict(zip(reads_ids, reads_info))
     return reads_info, reads_ids, reads_dict
+
+
+################################################################################
+def get_overlaps(read_1, read_2):
+    overlap_l = min(read_1[1], read_2[1]) - max(read_1[0], read_2[0]) + 1
+    overlap_r = min(read_1[3], read_2[3]) - max(read_1[2], read_2[2]) + 1
+    overlap_g = min(read_1[2], read_2[2]) - max(read_1[1], read_2[1]) + 1
+    span_l = max(read_1[1], read_2[1]) - min(read_1[0], read_2[0]) + 1
+    span_r = max(read_1[3], read_2[3]) - min(read_1[2], read_2[2]) + 1
+    span_g = max(read_1[2], read_2[2]) - min(read_1[1], read_2[1]) + 1
+    return overlap_l, overlap_r, overlap_g, span_l, span_r, span_g
