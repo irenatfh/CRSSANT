@@ -74,3 +74,17 @@ def get_overlaps(read_1, read_2):
     span_r = max(read_1[3], read_2[3]) - min(read_1[2], read_2[2]) + 1
     span_g = max(read_1[2], read_2[2]) - min(read_1[1], read_2[1]) + 1
     return overlap_l, overlap_r, overlap_g, span_l, span_r, span_g
+
+
+################################################################################
+def count_crosslinks(seq, fc, mfe):
+    l_bp_inds = [i for i in range(len(seq)) if fc[i] == '(' ]
+    r_bp_inds = [i for i in range(len(seq)) if fc[i] == ')' ][::-1]
+    cl_counter = 0
+    for (l_ind, r_ind) in zip(l_bp_inds, r_bp_inds):
+        if (l_ind != 0) or (r_ind != len(seq)):
+            if (seq[l_ind:l_ind+2] == 'TA') and (seq[r_ind-1:r_ind+1] == 'TA'):
+                cl_counter += 1  # "after" condition
+        if (seq[l_ind-1:l_ind+1] == 'AT') and (seq[r_ind:r_ind+2] == 'AT'):
+            cl_counter += 1  # "before" condition
+    print("%s uridine cross-linking sites found in %s-bp stem" %(cl_counter, len(l_bp_inds)))
