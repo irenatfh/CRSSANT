@@ -80,11 +80,20 @@ def get_overlaps(read_1, read_2):
 def count_crosslinks(seq, fc, mfe):
     l_bp_inds = [i for i in range(len(seq)) if fc[i] == '(' ]
     r_bp_inds = [i for i in range(len(seq)) if fc[i] == ')' ][::-1]
-    cl_counter = 0
+    uu_cl_counter = 0
+    uc_cl_counter = 0
     for (l_ind, r_ind) in zip(l_bp_inds, r_bp_inds):
         if (l_ind != 0) or (r_ind != len(seq)):
-            if (seq[l_ind:l_ind+2] == 'TA') and (seq[r_ind-1:r_ind+1] == 'TA'):
-                cl_counter += 1  # "after" condition
-        if (seq[l_ind-1:l_ind+1] == 'AT') and (seq[r_ind:r_ind+2] == 'AT'):
-            cl_counter += 1  # "before" condition
-    print("%s uridine cross-linking sites found in %s-bp stem" %(cl_counter, len(l_bp_inds)))
+            if (set(seq[l_ind]+seq[r_ind-1]) == set('TC')) or \
+                (set(seq[l_ind]+seq[r_ind-1]) == set('T')):
+                if (seq[l_ind] == 'T') and (seq[r_ind-1] == 'T'):  # "after" condition
+                    uu_cl_counter += 1
+                else:
+                    uc_cl_counter += 1
+            if (set(seq[l_ind]+seq[r_ind+1]) == set('TC')) or \
+                (set(seq[l_ind]+seq[r_ind+1]) == set('T')):
+                if (seq[l_ind] == 'T') and (seq[r_ind+1] == 'T'):  # "before" condition
+                    uu_cl_counter += 1
+                else:
+                    uc_cl_counter += 1
+    return [uu_cl_counter, uc_cl_counter], len(l_bp_inds)
