@@ -1,6 +1,5 @@
 import numpy as np
 import re
-import networkx as nx
 
 
 ################################################################################
@@ -32,40 +31,6 @@ def process_cigar(cigar_str):
 
 
 ################################################################################
-def get_reads(sam_file):
-    traits = ['L start pos', 'L stop pos', 'R start pos', 'R stop pos', 'DG']
-    reads_info = []
-    reads_ids = []
-    line_counter = 1
-    cigar_ops_set = set()
-    with open(sam_file, 'r') as f:
-        for line in f:
-            if line[0] != '@':
-                data = line.split('\t')
-                read_id = data[0]
-                pos_align = int(data[3])
-                cigar_str = data[5]
-                xg = data[19]
-                dg = int(data[20].split(':')[-1])
-                if (xg == 'XG:i:0') or (xg == 'XG:i:1'):
-                    cigar_ops, cigar_lens = process_cigar(cigar_str)
-                    cigar_ops_set.update({tuple(cigar_ops)})
-                    if cigar_ops == ['S', 'M', 'N', 'M', 'S']:
-                        l_pos_start = pos_align
-                        l_pos_stop = l_pos_start + cigar_lens[1] - 1
-                        r_pos_start = l_pos_stop + cigar_lens[2] + 1
-                        r_pos_stop = r_pos_start + cigar_lens[3] - 1
-                        reads_ids.append(read_id)
-                        reads_info.append((l_pos_start, l_pos_stop, 
-                                           r_pos_start, r_pos_stop, dg))
-            line_counter += 1
-    reads_info = np.asarray(reads_info)
-    reads_ids = np.asarray(reads_ids)
-    reads_dict = dict(zip(reads_ids, reads_info))
-    return reads_info, reads_ids, reads_dict
-
-
-################################################################################
 def get_overlaps(read_1, read_2):
     overlap_l = min(read_1[1], read_2[1]) - max(read_1[0], read_2[0]) + 1
     overlap_r = min(read_1[3], read_2[3]) - max(read_1[2], read_2[2]) + 1
@@ -86,13 +51,15 @@ def count_crosslinks(seq, fc, mfe):
         if (l_ind != 0) or (r_ind != len(seq)):
             if (set(seq[l_ind]+seq[r_ind-1]) == set('TC')) or \
                 (set(seq[l_ind]+seq[r_ind-1]) == set('T')):
-                if (seq[l_ind] == 'T') and (seq[r_ind-1] == 'T'):  # "after" condition
+                # "after" condition
+                if (seq[l_ind] == 'T') and (seq[r_ind-1] == 'T'):
                     uu_cl_counter += 1
                 else:
                     uc_cl_counter += 1
             if (set(seq[l_ind]+seq[r_ind+1]) == set('TC')) or \
                 (set(seq[l_ind]+seq[r_ind+1]) == set('T')):
-                if (seq[l_ind] == 'T') and (seq[r_ind+1] == 'T'):  # "before" condition
+                # "before" condition
+                if (seq[l_ind] == 'T') and (seq[r_ind+1] == 'T'):
                     uu_cl_counter += 1
                 else:
                     uc_cl_counter += 1
