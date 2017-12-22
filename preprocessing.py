@@ -1,5 +1,5 @@
-import numpy as np
 import subfunctions as sf
+
 
 ################################################################################
 def parse_reference(ref_file):
