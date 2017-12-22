@@ -83,6 +83,6 @@ def spectral_clustering(graph, dg_index):
             dg_index += k
         else:
             read_id = list(subgraph.nodes())[0]
-            kmeans_dict[dg_index] = read_id
+            kmeans_dict[dg_index] = [read_id]
             dg_index +=1
     return kmeans_dict, dg_index
