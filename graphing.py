@@ -69,20 +69,15 @@ def spectral_clustering(graph, dg_index):
             w, v = sp.linalg.eigh(L, D)
             eigengaps = np.diff(w)
             k = np.argmax(eigengaps) + 1
-            Y = v[:,:k]
+            Y = v[:,:k]  # first k eigenvectors for clustering
             kmeans = KMeans(n_clusters=k, random_state=0).fit(Y)
             kmeans.labels_ += dg_index
-            subgraph_dict = dict(zip(
-                set(kmeans.labels_),
-                [[] for i in range(len(set(kmeans.labels_)))]))
-            for i in range(len(subgraph.nodes())):
-                subgraph_dict[kmeans.labels_[i]].append(
-                    list(subgraph.nodes())[i])
+            subgraph_dict = dict(zip(subgraph.nodes(), kmeans.labels_))
             kmeans_dict = {**kmeans_dict, 
                            **subgraph_dict}
             dg_index += k
         else:
             read_id = list(subgraph.nodes())[0]
-            kmeans_dict[dg_index] = [read_id]
+            kmeans_dict[read_id] = dg_index
             dg_index +=1
     return kmeans_dict, dg_index

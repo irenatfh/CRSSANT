@@ -26,8 +26,8 @@ def parse_reference_bed(ref_file):
 ################################################################################
 def get_reference_seq(ref_file):
     ref_seq_dict = {}
-    with open(ref_file, 'r') as r:
-        for line in r:
+    with open(ref_file, 'r') as f:
+        for line in f:
             if line[0] == '>':
                 ref_key = line.split('>')[-1][:-1]
             else:
