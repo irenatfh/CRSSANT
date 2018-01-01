@@ -3,11 +3,19 @@ import subfunctions as sf
 
 ################################################################################
 def parse_reference_bed(ref_file):
-    """Parse a reference BED file and return a dictionary with items:
-    rna:[start position, stop position]
+    """
+    Parse a reference BED file into a dictionary.
 
-    Keyword arguments:
-    ref_file -- the reference file path
+    Parameters
+    ----------
+    ref_file : str
+        Reference file path
+
+    Returns
+    -------
+    dict
+        {genomic region:{rna:[start position, stop position]}}
+
     """
     ref_dict = {}
     with open(ref_file, 'r') as f:
@@ -20,11 +28,26 @@ def parse_reference_bed(ref_file):
             pos_stop = int(data[2]) - 1
             rna = data[3]
             ref_dict[region][rna] = [pos_start, pos_stop]
+            
     return ref_dict
 
 
 ################################################################################
 def get_reference_seq(ref_file):
+    """
+    Parse a reference sequence file into a dictionary
+
+    Parameters
+    ----------
+    ref_file : str
+        Reference sequence file path
+
+    Returns
+    -------
+    dict
+        {genomic region:sequence}
+
+    """
     ref_seq_dict = {}
     with open(ref_file, 'r') as f:
         for line in f:
@@ -32,17 +55,27 @@ def get_reference_seq(ref_file):
                 ref_key = line.split('>')[-1][:-1]
             else:
                 ref_seq_dict[ref_key] = line[:-1]
+                
     return ref_seq_dict
 
 
 ################################################################################
 def parse_reads(reads_file, ref_dict):
-    """Parse a reads SAM file and return a reads dictionary with items:
-    read ID:[L start, L stop, R start, R stop, L arm RNA, R arm RNA]
+    """
+    Parse a reads SAM file into a dictionary.
 
-    Keyword arguments:
-    reads_file -- the reads file path
-    ref_dict -- the reference file dictionary
+    Parameters
+    ----------
+    reads_file : str
+        Reads file path
+    ref_dict : str
+        Reference file dictionary
+
+    Returns
+    -------
+    dict
+        {read ID:[L start, L stop, R start, R stop, L arm RNA, R arm RNA]}
+
     """
     reads_dict = {}
     with open(reads_file, 'r') as f:
@@ -74,4 +107,5 @@ def parse_reads(reads_file, ref_dict):
                                 l_pos_start, l_pos_stop, 
                                 r_pos_start, r_pos_stop,
                                 l_arm_rna[0], r_arm_rna[0]]
+                            
     return reads_dict
