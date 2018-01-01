@@ -54,15 +54,16 @@ def fold_and_filter_cl_dgs(reads_dict, dg_reads_dict, ref_seq):
 
     Returns
     -------
-    int
-        Description of return value
+    dict
+        {dg:{'arm_indices': np array, 'basepairs': nested np array, 
+             'num_reads': int}}
 
     """
     dg_folded_dict = {}
     for (dg, dg_reads_list) in dg_reads_dict.items():
         dg_reads_info = np.median(
             np.array([reads_dict[i][:-2] for i in dg_reads_list]), axis=0)
-        if len(dg_reads_list) > 1:
+        if len(dg_reads_list) >= 2:
             dg_inds = np.array([int(dg_reads_info[0]), int(dg_reads_info[1]),
                                 int(dg_reads_info[2]), int(dg_reads_info[3])])
             l_arm = ref_seq[dg_inds[0] : dg_inds[1] + 1]
@@ -101,7 +102,7 @@ def fold_and_filter_cl_dgs(reads_dict, dg_reads_dict, ref_seq):
                     continue
                 else:
                     uu, stem_len = sf.count_crosslinks(seq, fc)
-                    if uu > 0:
+                    if uu >= 1:
                         l_bps = [i for i in range(cut_point) if fc[i] == '(']
                         l_bps = read_start + np.array(l_bps)
                         r_bps = [i - cut_point 
@@ -109,12 +110,59 @@ def fold_and_filter_cl_dgs(reads_dict, dg_reads_dict, ref_seq):
                                  if fc[i] == ')']
                         r_bps = dg_inds[2] + np.array(r_bps)
                         r_bps = r_bps[::-1]
-                        dg_folded_dict[dg] = {'arm indices':dg_inds, 
-                                              'basepairs':np.array([l_bps, 
-                                                                    r_bps])}
+                        dg_folded_dict[dg] = {'arm_indices': dg_inds, 
+                                              'basepairs': np.array([l_bps, 
+                                                                     r_bps]),
+                                              'num_reads': len(dg_reads_list)}
                         
     return dg_folded_dict
 
 
 ################################################################################
-# def filter_dgs_by_coverage(dg_folded_dict, dg_reads_dict, ref_seq):
+def filter_dgs_by_cov(dg_folded_dict, reads_dict,
+                      COV_THRESH=0):
+    """
+    Filter folded duplex groups by coverage threshold.
+    
+    Coverage is defined as c / sqrt(a*b) where
+        + c = number of reads in a given DG
+        + a = number of reads overlapping the left arm of the DG
+        + b = number of reads overlapping the right arm of the DG
+    All DG with coverage < COV_THRESH are discarded.
+
+    Parameters
+    ----------
+    dg_folded_dict : int
+        Dictionary of DG with valid folding structures and crosslinking sites
+    reads_dict : dict
+        Dictionary of reads and reads information
+    COV_THRESH : coverage threshold
+
+    Returns
+    -------
+    dict
+        {dg:{'arm_indices': np array, 'basepairs': nested np array, 
+             'num_reads': int, 'coverage': float}}
+
+    """
+    dg_cov_dict = {}
+    for (dg, dg_info) in dg_folded_dict.items():
+        dg_inds = dg_info['arm_indices']
+        num_reads_dg = dg_info['num_reads']
+        num_reads_l = 0
+        num_reads_r = 0
+        for read in reads_dict:
+            read_inds = reads_dict[read][:-2]
+            overlaps = sf.get_overlaps(dg_inds, read_inds)
+            overlap_l = overlaps[0]
+            overlap_r = overlaps[1]
+            if overlap_l > 0:
+                num_reads_l += 1
+            if overlap_r > 0:
+                num_reads_r += 1
+        cov = num_reads_dg / np.sqrt(num_reads_l * num_reads_r)
+        if cov >= COV_THRESH:
+            dg_cov_dict[dg] = {**dg_info, **{'coverage': cov}}
+            
+    return dg_cov_dict
+        
