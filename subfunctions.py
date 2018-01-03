@@ -93,22 +93,29 @@ def count_crosslinks(seq, fc):
 
     Returns
     -------
-    int, int
-        crosslink count, helix length
+    np array, int
+        [uu crosslink count, uc crosslink count], helix length
 
     """
     l_bp_inds = [i for i in range(len(seq)) if fc[i] == '(' ]
     r_bp_inds = [i for i in range(len(seq)) if fc[i] == ')' ][::-1]
-    cl_counter = 0
+    uu_cl_counter = 0
+    uc_cl_counter = 0
     for (l_ind, r_ind) in zip(l_bp_inds, r_bp_inds):
         if (l_ind != 0) or (r_ind != len(seq)):
             # Check previous base on right arm
             if (set(seq[l_ind] + seq[r_ind-1]) == set('TC')) or \
                 (set(seq[l_ind] + seq[r_ind-1]) == set('T')):
-                cl_counter += 1
+                if (seq[l_ind] == 'T') and (seq[r_ind-1] == 'T'):
+                    uu_cl_counter += 1
+                else:
+                    uc_cl_counter += 1
             # Check following base on right arm
             if (set(seq[l_ind] + seq[r_ind+1]) == set('TC')) or \
                 (set(seq[l_ind] + seq[r_ind+1]) == set('T')):
-                cl_counter += 1
+                if (seq[l_ind] == 'T') and (seq[r_ind+1] == 'T'):
+                    uu_cl_counter += 1
+                else:
+                    uc_cl_counter += 1
                     
-    return cl_counter, len(l_bp_inds)
+    return np.array([uu_cl_counter, uc_cl_counter]), len(l_bp_inds)

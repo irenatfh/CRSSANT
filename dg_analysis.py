@@ -33,15 +33,15 @@ def get_preliminary_dgs(reads_dict, reads_dg_dict):
 
 
 ################################################################################
-def fold_and_filter_cl_dgs(reads_dict, dg_reads_dict, ref_seq):
+def fold_and_filter_dgs(reads_dict, dg_reads_dict, ref_seq):
     """
-    Filter folded duplex groups by validity of folding struture and number of
-    uridine crosslinking sites.
+    Fold and filter DGs, and calculate other DG information
     
-    Filtering criteria:
-        + Number of reads >= 2
-        + ViennaRNA folding structure makes sense
-        + Number of uridine crosslinking sites >= 1
+    + Filter out DGs with fewer than 2 reads
+    + If there exists valid ViennaRNA folding structure, add it to the dict
+      as the 'basepairs' nested array. Else, add it as 'NA.'
+    + If there exists valid ViennaRNA folding structure, add to dict the number 
+      of uridine crosslinking sites as an array of [UU, UC]. Else, add as 'NA.'
 
     Parameters
     ----------
@@ -78,8 +78,9 @@ def fold_and_filter_cl_dgs(reads_dict, dg_reads_dict, ref_seq):
             r_symbols = [i for i in fc[cut_point:] if i != '.']
             # Check for fatal helix folding results
             if (len(l_symbols) < 1 or len(r_symbols) < 1) or \
-               (l_symbols[-1]+r_symbols[0] != '()'):
-                continue
+                (l_symbols[-1]+r_symbols[0] != '()'):
+                folded_struct = 'NA'
+                cl_arr = 'NA'
             else:
                 # Truncate helix arms to fix folding, if necessary
                 if (set(fc[:cut_point]) != set('.(')):
@@ -99,28 +100,30 @@ def fold_and_filter_cl_dgs(reads_dict, dg_reads_dict, ref_seq):
                 # Fixing the helix folding by truncation was unsuccessful
                 if (set(fc[:cut_point]) != set('.(')) or \
                    (set(fc[cut_point:]) != set('.)')):
-                    continue
+                    folded_struct = 'NA'
+                    cl_arr = 'NA'
                 else:
                     uu, stem_len = sf.count_crosslinks(seq, fc)
-                    if uu >= 1:
-                        l_bps = [i for i in range(cut_point) if fc[i] == '(']
-                        l_bps = read_start + np.array(l_bps)
-                        r_bps = [i - cut_point 
-                                 for i in range(cut_point, len(fc)) 
-                                 if fc[i] == ')']
-                        r_bps = dg_inds[2] + np.array(r_bps)
-                        r_bps = r_bps[::-1]
-                        dg_folded_dict[dg] = {'arm_indices': dg_inds, 
-                                              'basepairs': np.array([l_bps, 
-                                                                     r_bps]),
-                                              'num_reads': len(dg_reads_list)}
+                    cl_arr = uu
+                    l_bps = [i for i in range(cut_point) if fc[i] == '(']
+                    l_bps = read_start + np.array(l_bps)
+                    r_bps = [i - cut_point 
+                             for i in range(cut_point, len(fc)) 
+                             if fc[i] == ')']
+                    r_bps = dg_inds[2] + np.array(r_bps)
+                    r_bps = r_bps[::-1]
+                    folded_struct = np.array([l_bps, r_bps])
+            dg_folded_dict[dg] = {'arm_indices': dg_inds, 
+                                  'basepairs': folded_struct,
+                                  'num_reads': len(dg_reads_list),
+                                  'cl_sites': cl_arr}
                         
     return dg_folded_dict
 
 
 ################################################################################
-def filter_dgs_by_cov(dg_folded_dict, reads_dict,
-                      COV_THRESH=0):
+def add_coverage_to_dgs(dg_folded_dict, reads_dict,
+                        COV_THRESH=0):
     """
     Filter folded duplex groups by coverage threshold.
     
