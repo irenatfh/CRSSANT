@@ -241,4 +241,43 @@ def add_coverage_to_dgs(dg_dict, reads_dict):
         dg_cov_dict[dg] = {**dg_info, **{'coverage': cov}}
             
     return dg_cov_dict
+
+
+################################################################################
+def add_ngs_to_dgs(dg_dict, dg_reads_dict, reads_dict):
+    ng_dict = {}
+    ng_ind = 0
+    for dg in dg_dict.keys():
+        dg_reads_list = dg_reads_dict[dg]
+        dg_start = min(np.array([reads_dict[i][0] for i in dg_reads_list]))
+        dg_stop = max(np.array([reads_dict[i][3] for i in dg_reads_list]))
+        if len(ng_dict) == 0:
+            ng_dict[ng_ind] = [dg]
+            dg_dict[dg] = {**dg_dict[dg], **{'NG': ng_ind}}
+            ng_ind += 1
+        else:
+            ng_flag = 0
+            for (ng, ng_dgs) in ng_dict.items():
+                overlaps_arr = np.zeros(len(ng_dgs))
+                for (i, dg_other) in enumerate(ng_dgs):
+                    dg_other_start = min(np.array(
+                        [reads_dict[i][0] for i in dg_reads_dict[dg_other]]))
+                    dg_other_stop = max(np.array(
+                        [reads_dict[i][3] for i in dg_reads_dict[dg_other]]))
+                    overlap = min(dg_stop, dg_other_stop) - max(dg_start, 
+                                                                dg_other_start)
+                    if overlap >= 0:
+                        overlaps_arr[i] = 1
+                if sum(overlaps_arr) == 0:
+                    ng_dgs.append(dg)
+                    dg_dict[dg] = {**dg_dict[dg], **{'NG': ng}}
+                    ng_flag += 1
+                    break
+            if ng_flag == 0:
+                ng_dict[ng_ind] = [dg]
+                dg_dict[dg] = {**dg_dict[dg], **{'NG': ng_ind}}
+                ng_ind += 1
+                
+    return dg_dict
         
+            
