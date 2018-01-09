@@ -102,15 +102,15 @@ def count_crosslinks(seq, fc):
     uu_cl_counter = 0
     uc_cl_counter = 0
     for (l_ind, r_ind) in zip(l_bp_inds, r_bp_inds):
-        if (l_ind != 0) or (r_ind != len(seq)):
-            # Check previous base on right arm
+        if l_ind < max(l_bp_inds): # Check previous base on right arm
             if (set(seq[l_ind] + seq[r_ind-1]) == set('TC')) or \
                 (set(seq[l_ind] + seq[r_ind-1]) == set('T')):
                 if (seq[l_ind] == 'T') and (seq[r_ind-1] == 'T'):
                     uu_cl_counter += 1
                 else:
                     uc_cl_counter += 1
-            # Check following base on right arm
+                    
+        if l_ind > min(l_bp_inds):# Check following base on right arm
             if (set(seq[l_ind] + seq[r_ind+1]) == set('TC')) or \
                 (set(seq[l_ind] + seq[r_ind+1]) == set('T')):
                 if (seq[l_ind] == 'T') and (seq[r_ind+1] == 'T'):
