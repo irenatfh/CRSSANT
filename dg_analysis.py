@@ -210,8 +210,9 @@ def add_coverage_to_dgs(dg_dict, reads_dict):
 
     Parameters
     ----------
-    dg_dict : int
-        Dictionary of DG with valid folding structures and crosslinking sites
+    dg_dict : dict
+        DG dictionary {DG:{DG atttributes}}, where the attributes
+        should include valid folding structures and crosslinking sites
     reads_dict : dict
         Dictionary of reads and reads information
 
@@ -244,17 +245,34 @@ def add_coverage_to_dgs(dg_dict, reads_dict):
 
 
 ################################################################################
-def add_ngs_to_dgs(dg_dict, dg_reads_dict, reads_dict):
+def add_ngs_to_dgs(dg_dict, dg_reads_dict, reads_dict, ng_index):
+    """
+    Add non-overlapping groups (NGs) to DG dict.
+
+    Parameters
+    ----------
+    dg_dict : dict
+        DG dictionary {DG:{DG atttributes}}
+    dg_reads_dict : dict
+        Dictionary of reads and their spectral clustering DG assignments
+    reads_dict : dict
+        Dictionary of reads and reads information 
+
+    Returns
+    -------
+    dict
+        dg_dict updated with NG attribute
+
+    """
     ng_dict = {}
-    ng_ind = 0
     for dg in dg_dict.keys():
         dg_reads_list = dg_reads_dict[dg]
         dg_start = min(np.array([reads_dict[i][0] for i in dg_reads_list]))
         dg_stop = max(np.array([reads_dict[i][3] for i in dg_reads_list]))
         if len(ng_dict) == 0:
-            ng_dict[ng_ind] = [dg]
-            dg_dict[dg] = {**dg_dict[dg], **{'NG': ng_ind}}
-            ng_ind += 1
+            ng_dict[ng_index] = [dg]
+            dg_dict[dg] = {**dg_dict[dg], **{'NG': ng_index}}
+            ng_index += 1
         else:
             ng_flag = 0
             for (ng, ng_dgs) in ng_dict.items():
@@ -274,10 +292,10 @@ def add_ngs_to_dgs(dg_dict, dg_reads_dict, reads_dict):
                     ng_flag += 1
                     break
             if ng_flag == 0:
-                ng_dict[ng_ind] = [dg]
-                dg_dict[dg] = {**dg_dict[dg], **{'NG': ng_ind}}
-                ng_ind += 1
+                ng_dict[ng_index] = [dg]
+                dg_dict[dg] = {**dg_dict[dg], **{'NG': ng_index}}
+                ng_index += 1
                 
-    return dg_dict
+    return dg_dict, ng_index
         
             
