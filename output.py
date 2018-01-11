@@ -2,7 +2,7 @@ import numpy as np
 
 
 ################################################################################
-def rna_dg_ng_sam(reads_file, rna_file, dg_reads_dict, dg_dict):
+def write_dg_ng_sam(reads_file, rna_file, dg_reads_dict, dg_dict):
     with open(reads_file, 'r') as f_read, \
          open(rna_file, 'w') as f_write:
         for line in f_read:
@@ -24,7 +24,7 @@ def rna_dg_ng_sam(reads_file, rna_file, dg_reads_dict, dg_dict):
 
 
 ################################################################################
-def info_bed(bed_file, dg_dict, region):
+def write_info_bed(bed_file, dg_dict, region):
     with open(bed_file, 'w') as f_write:
         f_write.write('track graphType=arc\n')
         for (dg, dg_info) in dg_dict.items():
@@ -43,4 +43,19 @@ def info_bed(bed_file, dg_dict, region):
                     '0,%d' %(right_start - left_start)]
             f_write.write('\t'.join(line) + '\n')
         
+    return
+
+
+################################################################################
+def write_helix_bed(bed_file, dg_dict, region, rna):
+    with open(bed_file, 'w') as f_write:
+        f_write.write('track graphType=arc\n')
+        for (dg, dg_info) in dg_dict.items():
+            helix_inds = dg_info['basepairs']
+            len_helix = np.shape(helix_inds)[1]
+            for [left_ind, right_ind] in helix_inds.T:
+                line = [region, str(left_ind), str(right_ind), rna, '1', '+',
+                        str(left_ind), str(left_ind), '0,0,0']
+                f_write.write('\t'.join(line) + '\n')
+             
     return
