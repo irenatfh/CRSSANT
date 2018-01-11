@@ -131,8 +131,8 @@ def fold_dgs(dg_reads_dict, reads_dict, ref_seq):
         # Check for fatal helix folding results
         if (len(l_symbols) < 1 or len(r_symbols) < 1) or \
            (l_symbols[-1]+r_symbols[0] != '()'):
-            folded_struct = 'NA'
-            cl_arr = 'NA'
+            folded_struct = np.zeros((2,1))
+            cl_arr = np.zeros(2)
         else:
             # Truncate helix arms to fix folding, if necessary
             if (set(fc[:cut_point]) != set('.(')):
@@ -152,8 +152,8 @@ def fold_dgs(dg_reads_dict, reads_dict, ref_seq):
             # Fixing the helix folding by truncation was unsuccessful
             if (set(fc[:cut_point]) != set('.(')) or \
                (set(fc[cut_point:]) != set('.)')):
-                folded_struct = 'NA'
-                cl_arr = 'NA'
+                folded_struct = np.zeros((2,1))
+                cl_arr = np.zeros(2)
             else:
                 uu, stem_len = sf.count_crosslinks(seq, fc)
                 cl_arr = uu
