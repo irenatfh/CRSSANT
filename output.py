@@ -27,7 +27,7 @@ def write_dg_ng_sam(reads_file, rna_file, dg_reads_dict, dg_dict):
 ################################################################################
 def write_info_bed(bed_file, dg_dict, region):
     with open(bed_file, 'w') as f_write:
-        f_write.write('track graphType=arc\n')
+        f_write.write('track graphType=arc\titemRgb=on\n')
         for (dg, dg_info) in dg_dict.items():
             dg_inds = dg_info['arm_indices']
             coverage = dg_info['coverage']
@@ -50,7 +50,7 @@ def write_info_bed(bed_file, dg_dict, region):
 ################################################################################
 def write_helix_bed(bed_file, dg_dict, region, rna):
     with open(bed_file, 'w') as f_write:
-        f_write.write('track graphType=arc\n')
+        f_write.write('track graphType=arc\titemRgb=on\n')
         for (dg, dg_info) in dg_dict.items():
             if np.array_equal(dg_info['basepairs'], np.zeros((2,1))) is False:
                 helix_inds = dg_info['basepairs']

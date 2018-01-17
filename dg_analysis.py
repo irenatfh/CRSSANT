@@ -92,9 +92,10 @@ def fold_dgs(dg_reads_dict, reads_dict, ref_seq):
     Fold DGs and calculate other DG information
     
     + If there exists valid ViennaRNA folding structure, add it to the dict
-      as the 'basepairs' nested array. Else, add it as 'NA.'
+      as the 'basepairs' nested array. Else, add array of zeros.
     + If there exists valid ViennaRNA folding structure, add to dict the number 
-      of uridine crosslinking sites as an array of [UU, UC]. Else, add as 'NA.'
+      of uridine crosslinking sites as an array of [UU, UC]. Else, add array of
+      zeros.
 
     Parameters
     ----------
@@ -109,7 +110,7 @@ def fold_dgs(dg_reads_dict, reads_dict, ref_seq):
     -------
     dict
         {dg:{'arm_indices': np array, 'basepairs': nested np array, 
-             'num_reads': int}}
+             'num_reads': int, 'cl_sites': np array}}
 
     """
     dg_folded_dict = {}
@@ -131,8 +132,8 @@ def fold_dgs(dg_reads_dict, reads_dict, ref_seq):
         # Check for fatal helix folding results
         if (len(l_symbols) < 1 or len(r_symbols) < 1) or \
            (l_symbols[-1]+r_symbols[0] != '()'):
-            folded_struct = np.zeros((2,1))
-            cl_arr = np.zeros(2)
+            folded_struct = np.zeros((2,1), dtype=np.int)
+            cl_sites = np.zeros(3, dtype=np.int)
         else:
             # Truncate helix arms to fix folding, if necessary
             if (set(fc[:cut_point]) != set('.(')):
@@ -152,11 +153,10 @@ def fold_dgs(dg_reads_dict, reads_dict, ref_seq):
             # Fixing the helix folding by truncation was unsuccessful
             if (set(fc[:cut_point]) != set('.(')) or \
                (set(fc[cut_point:]) != set('.)')):
-                folded_struct = np.zeros((2,1))
-                cl_arr = np.zeros(2)
+                folded_struct = np.zeros((2,1), dtype=np.int)
+                cl_sites = np.zeros(3, dtype=np.int)
             else:
-                uu, stem_len = sf.count_crosslinks(seq, fc)
-                cl_arr = uu
+                cl_sites = sf.count_crosslinks(seq, fc)
                 l_bps = [i for i in range(cut_point) if fc[i] == '(']
                 l_bps = read_start + np.array(l_bps)
                 r_bps = [i - cut_point for i in range(cut_point, len(fc)) 
@@ -167,7 +167,7 @@ def fold_dgs(dg_reads_dict, reads_dict, ref_seq):
         dg_folded_dict[dg] = {'arm_indices': dg_inds, 
                               'basepairs': folded_struct,
                               'num_reads': len(dg_reads_list),
-                              'cl_sites': cl_arr}
+                              'cl_sites': cl_sites}
                         
     return dg_folded_dict
 

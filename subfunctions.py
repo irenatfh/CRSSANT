@@ -93,8 +93,8 @@ def count_crosslinks(seq, fc):
 
     Returns
     -------
-    np array, int
-        [uu crosslink count, uc crosslink count], helix length
+    np array
+        [uu crosslink count, uc crosslink count, helix length]
 
     """
     l_bp_inds = [i for i in range(len(seq)) if fc[i] == '(' ]
@@ -118,4 +118,4 @@ def count_crosslinks(seq, fc):
                 else:
                     uc_cl_counter += 1
                     
-    return np.array([uu_cl_counter, uc_cl_counter]), len(l_bp_inds)
+    return np.array([uu_cl_counter, uc_cl_counter, len(l_bp_inds)], dtype=np.int)
