@@ -39,7 +39,7 @@ def adjust_dgs(dg_reads_dict, reads_ids, reads_dict, dg_index):
     
     Each read is checked for overlap with existing DGs.
     + If the read has no overlap with any DGs, add as DG.
-    + If the read is equidistant between at least two DGs, add as new DG.
+    + If the read has equal overlaps between at least two DGs, add as new DG.
     Note that this process updates the dg_reads_dict throughout the loop.
 
     Parameters
@@ -58,6 +58,7 @@ def adjust_dgs(dg_reads_dict, reads_ids, reads_dict, dg_index):
         Updated dg_reads_dict, DG index to start from
 
     """
+    import time
     for (index, read_id) in enumerate(reads_ids):
         read_inds = reads_dict[read_id][:-2]
         dg_overlaps = {}
@@ -68,7 +69,7 @@ def adjust_dgs(dg_reads_dict, reads_ids, reads_dict, dg_index):
                                 int(dg_reads_info[2]), int(dg_reads_info[3])])
             overlaps = sf.get_overlaps(read_inds, dg_inds)
             sum_ratio = overlaps[0]/overlaps[3] + overlaps[1]/overlaps[4]
-            if sum_ratio > 0:
+            if (overlaps[0]/overlaps[3] > 0.25) and (overlaps[1]/overlaps[4] > 0.25):
                 dg_overlaps[dg] = sum_ratio
         if len(dg_overlaps) == 0:
             dg_reads_dict[dg_index] = [read_id]
