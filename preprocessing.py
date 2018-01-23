@@ -60,7 +60,7 @@ def get_reference_seq(ref_file):
 
 
 ################################################################################
-def parse_reads(reads_file, ref_dict):
+def parse_reads(reads_file, ref_dict, output_sam):
     """
     Parse a reads SAM file into a dictionary.
 
@@ -70,6 +70,8 @@ def parse_reads(reads_file, ref_dict):
         Reads file path
     ref_dict : str
         Reference file dictionary
+    output_sam : str
+        Output file name
 
     Returns
     -------
@@ -78,8 +80,8 @@ def parse_reads(reads_file, ref_dict):
 
     """
     reads_dict = {}
-    with open(reads_file, 'r') as f:
-        for line in f:
+    with open(reads_file, 'r') as f_read, open(output_sam, 'w') as f_write:
+        for line in f_read:
             if line[0] != '@':
                 data = line.split('\n')[0].split('\t')
                 read_id = data[0]
@@ -107,5 +109,7 @@ def parse_reads(reads_file, ref_dict):
                                 l_pos_start, l_pos_stop, 
                                 r_pos_start, r_pos_stop,
                                 l_arm_rna[0], r_arm_rna[0]]
+            else:
+                f_write.write(line)
                             
     return reads_dict

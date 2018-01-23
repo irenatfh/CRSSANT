@@ -1,15 +1,12 @@
 import numpy as np
-import scipy as sp
 
 
 ################################################################################
 def write_dg_ng_sam(reads_file, rna_file, dg_reads_dict, dg_dict):
     with open(reads_file, 'r') as f_read, \
-         open(rna_file, 'w') as f_write:
+         open(rna_file, 'a') as f_write:
         for line in f_read:
-            if line[0] == '@':
-                f_write.write(line)
-            else:
+            if line[0] != '@':
                 data = line.split('\n')[0].split('\t')
                 read_id = data[0]
                 for (dg, dg_info) in dg_dict.items():
@@ -26,7 +23,7 @@ def write_dg_ng_sam(reads_file, rna_file, dg_reads_dict, dg_dict):
 
 ################################################################################
 def write_info_bed(bed_file, dg_dict, region):
-    with open(bed_file, 'w') as f_write:
+    with open(bed_file, 'a') as f_write:
         f_write.write('track graphType=arc itemRgb=on\n')
         for (dg, dg_info) in dg_dict.items():
             dg_inds = dg_info['arm_indices']
@@ -56,7 +53,7 @@ def write_helix_bed(bed_file, dg_dict, region, rna, rna_1, rna_2, rna_order):
         color = '0,0,255'
     elif rna_dist > 1:
         color = '255,0,0'
-    with open(bed_file, 'w') as f_write:
+    with open(bed_file, 'a') as f_write:
         f_write.write('track graphType=arc itemRgb=on\n')
         for (dg, dg_info) in dg_dict.items():
             if np.array_equal(dg_info['basepairs'], np.zeros((2,1))) is False:
@@ -72,7 +69,7 @@ def write_helix_bed(bed_file, dg_dict, region, rna, rna_1, rna_2, rna_order):
 
 ################################################################################
 def write_aux(aux_file, dg_dict, dg_reads_dict, reads_dict):
-    with open(aux_file, 'w') as f_write:
+    with open(aux_file, 'a') as f_write:
         header = ['DG_coverage', '[UU_cl, UC_cl]', 'L_start', 'L_stop',
                   'R_start', 'R_stop']
         for (dg, dg_info) in dg_dict.items():
@@ -86,14 +83,11 @@ def write_aux(aux_file, dg_dict, dg_reads_dict, reads_dict):
             arm_edge_info = np.zeros((4, 2), dtype=int)
             for i in range(4):
                 read_indices = dg_reads_info[:,i]
-                edge_start = np.min(read_indices)
-                edge_stop = np.max(read_indices)
-                arm_edge_info[i, 0] = edge_start
-                arm_edge_info[i, 1] = edge_stop
-                arm_edge_counts = np.bincount(read_indices)
-                arm_edge_entropy = sp.stats.entropy(arm_edge_counts) / np.log(2)
+                arm_edge_info[i, 0] = np.min(read_indices)
+                arm_edge_info[i, 1] = np.max(read_indices)
+                arm_edge_sd = np.std(read_indices)
                 arm_range_str = ','.join([str(i) for i in arm_edge_info[i]])
-                line.append(arm_range_str + ',' + str(arm_edge_entropy))
+                line.append(arm_range_str + ',' + str(arm_edge_sd))
             f_write.write('\t'.join(line) + '\n')
     
     return
