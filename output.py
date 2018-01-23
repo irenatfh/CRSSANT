@@ -27,7 +27,7 @@ def write_dg_ng_sam(reads_file, rna_file, dg_reads_dict, dg_dict):
 ################################################################################
 def write_info_bed(bed_file, dg_dict, region):
     with open(bed_file, 'w') as f_write:
-        f_write.write('track graphType=arc\titemRgb=on\n')
+        f_write.write('track graphType=arc itemRgb=on\n')
         for (dg, dg_info) in dg_dict.items():
             dg_inds = dg_info['arm_indices']
             coverage = dg_info['coverage']
@@ -48,16 +48,23 @@ def write_info_bed(bed_file, dg_dict, region):
 
 
 ################################################################################
-def write_helix_bed(bed_file, dg_dict, region, rna):
+def write_helix_bed(bed_file, dg_dict, region, rna, rna_1, rna_2, rna_order):
+    rna_dist = abs(rna_order.index(rna_1) - rna_order.index(rna_2))
+    if rna_dist == 0:
+        color = '0,0,0'
+    elif rna_dist == 1:
+        color = '0,0,255'
+    elif rna_dist > 1:
+        color = '255,0,0'
     with open(bed_file, 'w') as f_write:
-        f_write.write('track graphType=arc\titemRgb=on\n')
+        f_write.write('track graphType=arc itemRgb=on\n')
         for (dg, dg_info) in dg_dict.items():
             if np.array_equal(dg_info['basepairs'], np.zeros((2,1))) is False:
                 helix_inds = dg_info['basepairs']
                 len_helix = np.shape(helix_inds)[1]
                 for [left_ind, right_ind] in helix_inds.T:
                     line = [region, str(left_ind), str(right_ind), rna, '1',
-                            '+', str(left_ind), str(left_ind), '0,0,0']
+                            '+', str(left_ind), str(left_ind), color]
                     f_write.write('\t'.join(line) + '\n')
              
     return
