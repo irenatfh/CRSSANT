@@ -24,7 +24,6 @@ def write_dg_ng_sam(reads_file, rna_file, dg_reads_dict, dg_dict):
 ################################################################################
 def write_info_bed(bed_file, dg_dict, region):
     with open(bed_file, 'a') as f_write:
-        f_write.write('track graphType=arc itemRgb=on\n')
         for (dg, dg_info) in dg_dict.items():
             dg_inds = dg_info['arm_indices']
             coverage = dg_info['coverage']
@@ -32,8 +31,8 @@ def write_info_bed(bed_file, dg_dict, region):
             left_start = dg_inds[0] + 1  # biology is 1-indexed
             right_start = dg_inds[2] + 1
             right_stop = dg_inds[3] + 1
-            left_len = dg_inds[1] - dg_inds[0]
-            right_len = dg_inds[3] - dg_inds[2]
+            left_len = dg_inds[1] - dg_inds[0] + 1
+            right_len = dg_inds[3] - dg_inds[2] + 1
             dg_str = 'Group_%d_%.16f' %(dg, coverage)
             line = [region, str(left_start), str(right_stop), dg_str, 
                     str(num_reads), '-', str(left_start), str(left_start), 
