@@ -94,7 +94,7 @@ def parse_reads(reads_file, ref_dict, output_sam):
                 if (xg == 'XG:i:0') or (xg == 'XG:i:1'):
                     cigar_ops, cigar_lens = sf.process_cigar(cigar_str)
                     if cigar_ops == ['S', 'M', 'N', 'M', 'S']:
-                        l_pos_start = pos_align - 1
+                        l_pos_start = pos_align - 1  # biology is 0-indexed
                         l_pos_stop = l_pos_start + cigar_lens[1] - 1
                         r_pos_start = l_pos_stop + cigar_lens[2] + 1
                         r_pos_stop = r_pos_start + cigar_lens[3] - 1
