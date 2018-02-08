@@ -60,7 +60,7 @@ def get_reference_seq(ref_file):
 
 
 ################################################################################
-def parse_reads(reads_file, ref_dict, output_sam):
+def parse_reads(reads_file, ref_dict, output_sam='test.sam'):
     """
     Parse a reads SAM file into a dictionary.
 

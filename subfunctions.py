@@ -78,6 +78,40 @@ def get_overlaps(read_1, read_2):
 
 
 ################################################################################
+def get_intersection(read_1, read_2):
+    """
+    Calculate the intersections between two reads, defined as the total number
+    of overlapping bases over any of the arms (left arm and left arm, left arm 
+    and right arm, etc.)
+    
+    The reads are each assumed to comprise two arms, a left and a right arm.
+
+    Parameters
+    ----------
+    read_1 : list
+        List containing information of read.
+        [read left start, read left stop, read right start, read right stop]
+    read_2 : list
+        List containing information of read.
+        [read left start, read left stop, read right start, read right stop]
+
+    Returns
+    -------
+    int
+        overlap of left arms, overlap of right arms, overlap of the gaps,
+        span of the left arm, span of the right arm, span of the gaps
+
+    """
+    range_1 = np.concatenate((np.arange(read_1[0], read_1[1] + 1),
+                              np.arange(read_1[2], read_1[3] + 1)), axis=0)
+    range_2 = np.concatenate((np.arange(read_2[0], read_2[1] + 1),
+                              np.arange(read_2[2], read_2[3] + 1)), axis=0)
+    intersection = set(range_1).intersection(set(range_2))
+    
+    return len(intersection)
+
+
+################################################################################
 def count_crosslinks(seq, fc):
     """
     Count uridine crosslinking sites in the DG sequence.
