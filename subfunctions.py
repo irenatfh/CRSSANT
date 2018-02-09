@@ -45,7 +45,7 @@ def process_cigar(cigar_str):
 
 
 ################################################################################
-def get_overlaps(read_1, read_2):
+def get_overlaps(read_1_inds, read_2_inds):
     """
     Calculate the overlaps between two reads and the distance spanned by them.
     
@@ -53,11 +53,11 @@ def get_overlaps(read_1, read_2):
 
     Parameters
     ----------
-    read_1 : list
-        List containing information of read.
+    read_1_inds : np array
+        np array containing information of read.
         [read left start, read left stop, read right start, read right stop]
-    read_2 : list
-        List containing information of read.
+    read_2_inds : np array
+        np array containing information of read.
         [read left start, read left stop, read right start, read right stop]
 
     Returns
@@ -78,7 +78,7 @@ def get_overlaps(read_1, read_2):
 
 
 ################################################################################
-def get_intersection(read_1, read_2):
+def get_intersection(read_1_inds, read_2_inds):
     """
     Calculate the intersections between two reads, defined as the total number
     of overlapping bases over any of the arms (left arm and left arm, left arm 
@@ -88,11 +88,11 @@ def get_intersection(read_1, read_2):
 
     Parameters
     ----------
-    read_1 : list
-        List containing information of read.
+    read_1_inds : np array
+        np array containing information of read.
         [read left start, read left stop, read right start, read right stop]
-    read_2 : list
-        List containing information of read.
+    read_2_inds : np array
+        np array containing information of read.
         [read left start, read left stop, read right start, read right stop]
 
     Returns
@@ -102,13 +102,42 @@ def get_intersection(read_1, read_2):
         span of the left arm, span of the right arm, span of the gaps
 
     """
-    range_1 = np.concatenate((np.arange(read_1[0], read_1[1] + 1),
-                              np.arange(read_1[2], read_1[3] + 1)), axis=0)
-    range_2 = np.concatenate((np.arange(read_2[0], read_2[1] + 1),
-                              np.arange(read_2[2], read_2[3] + 1)), axis=0)
+    range_1 = np.concatenate((np.arange(read_1_inds[0], read_1_inds[1] + 1),
+                              np.arange(read_1_inds[2], read_1_inds[3] + 1)), 
+                             axis=0)
+    range_2 = np.concatenate((np.arange(read_2_inds[0], read_2_inds[1] + 1),
+                              np.arange(read_2_inds[2], read_2_inds[3] + 1)), 
+                             axis=0)
     intersection = set(range_1).intersection(set(range_2))
     
     return len(intersection)
+
+
+################################################################################
+def read_inds_to_vec(read_inds, gene_length, gene_start):
+    """
+    Converts a read index array into a read vector
+
+    Parameters
+    ----------
+    read_inds : np array
+        np array containing information of read.
+        [read left start, read left stop, read right start, read right stop]
+
+    Returns
+    -------
+    np array
+        vector of length gene_length with read arm positions indicated by 1s 
+
+    """
+    read_vec = np.zeros(gene_length)
+    l_arm_range = np.arange(read_inds[0], read_inds[1] + 1) - (gene_start - 1)
+    r_arm_range = np.arange(read_inds[2], read_inds[3] + 1) - (gene_start - 1)
+    total_range = np.concatenate((l_arm_range, r_arm_range), axis=0)
+    for i in total_range:
+        read_vec[i] = 1
+    
+    return read_vec
 
 
 ################################################################################
