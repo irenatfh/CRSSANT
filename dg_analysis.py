@@ -151,7 +151,7 @@ def fold_dgs(dg_reads_dict, reads_dict, ref_seq):
             cut_point = len(l_arm)
             res = RNA.fold_compound(l_arm + '&' + r_arm)
             [fc, mfe] = res.mfe_dimer()
-            # Fixing the helix folding by truncation was unsuccessful
+            # Check if truncation was successful
             if (set(fc[:cut_point]) != set('.(')) or \
                (set(fc[cut_point:]) != set('.)')):
                 folded_struct = np.zeros((2,1), dtype=np.int)
