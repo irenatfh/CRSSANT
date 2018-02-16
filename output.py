@@ -56,8 +56,7 @@ def write_helix_bed(bed_file, dg_dict, region, rna, rna_1, rna_2, rna_order):
         f_write.write('track graphType=arc itemRgb=on\n')
         for (dg, dg_info) in dg_dict.items():
             if np.array_equal(dg_info['basepairs'], np.zeros((2,1))) is False:
-                helix_inds = dg_info['basepairs']
-                len_helix = np.shape(helix_inds)[1]
+                helix_inds = dg_info['basepairs'] + 1  # biology is 1-indexed
                 for [left_ind, right_ind] in helix_inds.T:
                     line = [region, str(left_ind), str(right_ind), rna, '1',
                             '+', str(left_ind), str(left_ind), color]
@@ -81,7 +80,7 @@ def write_aux(aux_file, dg_dict, dg_reads_dict, reads_dict):
             line = [dg_str, ','.join([str(i) for i in cl_sites])]
             arm_edge_info = np.zeros((4, 2), dtype=int)
             for i in range(4):
-                read_indices = dg_reads_info[:,i]
+                read_indices = dg_reads_info[:,i] + 1  # biology is 1-indexed
                 arm_edge_info[i, 0] = np.min(read_indices)
                 arm_edge_info[i, 1] = np.max(read_indices)
                 arm_edge_sd = np.std(read_indices)

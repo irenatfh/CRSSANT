@@ -67,12 +67,18 @@ def get_overlaps(read_1_inds, read_2_inds):
         span of the left arm, span of the right arm, span of the gaps
 
     """
-    overlap_l = min(read_1[1], read_2[1]) - max(read_1[0], read_2[0]) + 1
-    overlap_r = min(read_1[3], read_2[3]) - max(read_1[2], read_2[2]) + 1
-    overlap_g = min(read_1[2], read_2[2]) - max(read_1[1], read_2[1]) + 1
-    span_l = max(read_1[1], read_2[1]) - min(read_1[0], read_2[0]) + 1
-    span_r = max(read_1[3], read_2[3]) - min(read_1[2], read_2[2]) + 1
-    span_g = max(read_1[2], read_2[2]) - min(read_1[1], read_2[1]) + 1
+    overlap_l = min(read_1_inds[1], read_2_inds[1]) - \
+                max(read_1_inds[0], read_2_inds[0]) + 1
+    overlap_r = min(read_1_inds[3], read_2_inds[3]) - \
+                max(read_1_inds[2], read_2_inds[2]) + 1
+    overlap_g = min(read_1_inds[2], read_2_inds[2]) - \
+                max(read_1_inds[1], read_2_inds[1]) + 1
+    span_l = max(read_1_inds[1], read_2_inds[1]) - \
+             min(read_1_inds[0], read_2_inds[0]) + 1
+    span_r = max(read_1_inds[3], read_2_inds[3]) - \
+             min(read_1_inds[2], read_2_inds[2]) + 1
+    span_g = max(read_1_inds[2], read_2_inds[2]) - \
+             min(read_1_inds[1], read_2_inds[1]) + 1
     
     return overlap_l, overlap_r, overlap_g, span_l, span_r, span_g
 
