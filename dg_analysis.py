@@ -92,11 +92,11 @@ def fold_dgs(dg_reads_dict, reads_dict, ref_seq):
     """
     Fold DGs and calculate other DG information
     
-    + If there exists valid ViennaRNA folding structure, add it to the dict
-      as the 'basepairs' nested array. Else, add array of zeros.
-    + If there exists valid ViennaRNA folding structure, add to dict the number 
-      of uridine crosslinking sites as an array of [UU, UC]. Else, add array of
-      zeros.
+    + If there exists valid ViennaRNA folding structure (i.e. stem of at least
+      3 bp), add it to the dictionary with arm indices, basepairs, number of
+      reads and uridine crosslinking sites.
+    + If the initial ViennaRNA folding structure is invalid, try truncating the
+      DG.
 
     Parameters
     ----------
@@ -117,7 +117,7 @@ def fold_dgs(dg_reads_dict, reads_dict, ref_seq):
     dg_folded_dict = {}
     for (dg, dg_reads_list) in dg_reads_dict.items():
         dg_reads_info = np.median(
-            np.array([reads_dict[i][:-2] for i in dg_reads_list]), axis=0)
+            np.array([reads_dict[i][ : -2] for i in dg_reads_list]), axis=0)
         dg_inds = np.array([int(dg_reads_info[0]), int(dg_reads_info[1]),
                             int(dg_reads_info[2]), int(dg_reads_info[3])])
         l_arm = ref_seq[dg_inds[0] : dg_inds[1] + 1]
@@ -128,33 +128,33 @@ def fold_dgs(dg_reads_dict, reads_dict, ref_seq):
         # Attempt folding the sequence
         res = RNA.fold_compound(l_arm + '&' + r_arm)
         [fc, mfe] = res.mfe_dimer()
-        l_symbols = [i for i in fc[:cut_point] if i != '.']
-        r_symbols = [i for i in fc[cut_point:] if i != '.']
+        l_symbols = [i for i in fc[ : cut_point] if i != '.']
+        r_symbols = [i for i in fc[cut_point : ] if i != '.']
         # Check for fatal helix folding results
-        if (len(l_symbols) < 1 or len(r_symbols) < 1) or \
-           (l_symbols[-1]+r_symbols[0] != '()'):
-            folded_struct = np.zeros((2,1), dtype=np.int)
+        if (len(l_symbols) < 2 or len(r_symbols) < 2) or \
+           (l_symbols[-1] + r_symbols[0] != '()'):
             cl_sites = np.zeros(3, dtype=np.int)
         else:
-            # Truncate helix arms to fix folding, if necessary
+            # Check for folding results that might be fixable by truncation
             if (set(fc[:cut_point]) != set('.(')):
-                off_inds = [i for i in range(cut_point) if 
-                            fc[:cut_point][i] == ')']
-                l_arm = l_arm[off_inds[-1]+1 : ]
+                off_inds = [i for i in range(cut_point) if fc[i] == ')']
+                l_arm = l_arm[off_inds[-1] + 1 : ]
                 read_start += off_inds[-1] + 1
             if (set(fc[cut_point:]) != set('.)')):
                 off_inds = [i for i in range(len(r_arm)) if 
-                            fc[cut_point:][i] == '(']
+                            fc[cut_point : ][i] == '(']
                 r_arm = r_arm[ : off_inds[0]]
-            # Re-attempt helix folding
-            seq = l_arm + r_arm
+            # Re-attempt helix folding/fold helix again if no truncation
             cut_point = len(l_arm)
+            seq = l_arm + r_arm
             res = RNA.fold_compound(l_arm + '&' + r_arm)
             [fc, mfe] = res.mfe_dimer()
             # Check if truncation was successful
-            if (set(fc[:cut_point]) != set('.(')) or \
-               (set(fc[cut_point:]) != set('.)')):
-                folded_struct = np.zeros((2,1), dtype=np.int)
+            l_symbols = [i for i in fc[ : cut_point] if i != '.']
+            r_symbols = [i for i in fc[cut_point :] if i != '.']
+            # If truncation was unsuccessful output null crosslinking sites
+            if (len(l_symbols) < 2 or len(r_symbols) < 2) or \
+               (l_symbols[-1] + r_symbols[0] != '()'):
                 cl_sites = np.zeros(3, dtype=np.int)
             else:
                 cl_sites = sf.count_crosslinks(seq, fc)
@@ -164,9 +164,7 @@ def fold_dgs(dg_reads_dict, reads_dict, ref_seq):
                          if fc[i] == ')']
                 r_bps = dg_inds[2] + np.array(r_bps)
                 r_bps = r_bps[::-1]
-                folded_struct = np.array([l_bps, r_bps])
         dg_folded_dict[dg] = {'arm_indices': dg_inds, 
-                              'basepairs': folded_struct,
                               'num_reads': len(dg_reads_list),
                               'cl_sites': cl_sites}
                         

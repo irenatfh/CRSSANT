@@ -68,8 +68,13 @@ def write_helix_bed(bed_file, dg_dict, region, rna, rna_1, rna_2, rna_order):
 ################################################################################
 def write_aux(aux_file, dg_dict, dg_reads_dict, reads_dict):
     with open(aux_file, 'a') as f_write:
-        header = ['DG_coverage', '[UU_cl, UC_cl]', 'L_start', 'L_stop',
-                  'R_start', 'R_stop']
+        header = ['DG_coverage', 
+                  'UU_cl,UC_cl,helix_length', 
+                  'L_start_start,L_start_stop,L_start_std', 
+                  'L_stop_start,L_stop_stop,L_stop_std',
+                  'R_start_start,R_start_stop,R_start_std', 
+                  'R_stop_start,R_stop_stop,R_stop_std',]
+        f_write.write('\t'.join(header) + '\n')
         for (dg, dg_info) in dg_dict.items():
             coverage = dg_info['coverage']
             cl_sites = dg_info['cl_sites']
