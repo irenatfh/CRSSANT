@@ -133,6 +133,7 @@ def fold_dgs(dg_reads_dict, reads_dict, ref_seq):
         # Check for fatal helix folding results
         if (len(l_symbols) < 2 or len(r_symbols) < 2) or \
            (set(l_symbols) != set('(') or set(r_symbols) != set(')')):
+            folded_struct = np.zeros((2,1), dtype=np.int)
             cl_sites = np.zeros(3, dtype=np.int)
         else:
             # Check for folding results that might be fixable by truncation
@@ -155,6 +156,7 @@ def fold_dgs(dg_reads_dict, reads_dict, ref_seq):
             # If truncation was unsuccessful output null crosslinking sites
             if (len(l_symbols) < 2 or len(r_symbols) < 2) or \
                (set(l_symbols) != set('(') or set(r_symbols) != set(')')):
+                folded_struct = np.zeros((2,1), dtype=np.int)
                 cl_sites = np.zeros(3, dtype=np.int)
             else:
                 cl_sites = sf.count_crosslinks(seq, fc)
@@ -164,7 +166,9 @@ def fold_dgs(dg_reads_dict, reads_dict, ref_seq):
                          if fc[i] == ')']
                 r_bps = dg_inds[2] + np.array(r_bps)
                 r_bps = r_bps[::-1]
+                folded_struct = np.array([l_bps, r_bps])
         dg_folded_dict[dg] = {'arm_indices': dg_inds, 
+                              'basepairs': folded_struct,
                               'num_reads': len(dg_reads_list),
                               'cl_sites': cl_sites}
                         
