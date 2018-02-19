@@ -154,7 +154,7 @@ def fold_dgs(dg_reads_dict, reads_dict, ref_seq):
             r_symbols = [i for i in fc[cut_point :] if i != '.']
             # If truncation was unsuccessful output null crosslinking sites
             if (len(l_symbols) < 2 or len(r_symbols) < 2) or \
-               (l_symbols[-1] + r_symbols[0] != '()'):
+               (set(l_symbols) != set('(') or set(r_symbols) != set(')')):
                 cl_sites = np.zeros(3, dtype=np.int)
             else:
                 cl_sites = sf.count_crosslinks(seq, fc)

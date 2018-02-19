@@ -1,5 +1,8 @@
 import numpy as np
 import re
+import sys
+sys.path.append('/home/ihwang/software/ViennaRNA-2.4.3/interfaces/Python3')
+import RNA
 
 
 ################################################################################
@@ -188,3 +191,67 @@ def count_crosslinks(seq, fc):
                     uc_cl_counter += 1
                     
     return np.array([uu_cl_counter, uc_cl_counter, len(l_bp_inds)], dtype=np.int)
+
+
+################################################################################
+def calculate_stem_mfe(stem_inds, ref_seq):
+    """
+    Calculate the minimum free energy structure and energy of a stem.
+
+    Parameters
+    ----------
+    stem_inds : np array
+        RNA stem arm indices [left_start, left_stop, right_start, right_start]
+    ref_seq : str
+        Reference sequence
+
+    Returns
+    -------
+    str, float
+        [structure in parenthetical notation, minimum free energy of structure]
+
+    """
+    
+    folded_stem_inds = np.copy(stem_inds)
+    l_arm = ref_seq[stem_inds[0] : stem_inds[1] + 1]
+    r_arm = ref_seq[stem_inds[2] : stem_inds[3] + 1]
+    read_start = stem_inds[0]
+    cut_point = len(l_arm)
+    seq = l_arm + r_arm
+    # Attempt folding the sequence
+    res = RNA.fold_compound(l_arm + '&' + r_arm)
+    [fc, mfe] = res.mfe_dimer()
+    l_symbols = [i for i in fc[ : cut_point] if i != '.']
+    r_symbols = [i for i in fc[cut_point : ] if i != '.']
+    # Check for fatal helix folding results
+    if (len(l_symbols) < 2 or len(r_symbols) < 2) or \
+       (l_symbols[-1] + r_symbols[0] != '()'):
+        folded_stem_inds = np.zeros(4)
+    else:
+        # Check for folding results that might be fixable by truncation
+        if (set(fc[:cut_point]) != set('.(')):
+            off_inds = [i for i in range(cut_point) if fc[i] == ')']
+            l_arm = l_arm[off_inds[-1] + 1 : ]
+            folded_stem_inds[0] += off_inds[-1] + 1
+            read_start += off_inds[-1] + 1
+        if (set(fc[cut_point:]) != set('.)')):
+            off_inds = [i for i in range(len(r_arm)) if 
+                        fc[cut_point : ][i] == '(']
+            r_arm = r_arm[ : off_inds[0]]
+            folded_stem_inds[3] = folded_stem_inds[3] + off_inds[0] - 1
+        # Re-attempt helix folding/fold helix again if no truncation
+        cut_point = len(l_arm)
+        seq = l_arm + r_arm
+        res = RNA.fold_compound(l_arm + '&' + r_arm)
+        [fc, mfe] = res.mfe_dimer()
+        # Check if truncation was successful
+        l_symbols = [i for i in fc[ : cut_point] if i != '.']
+        r_symbols = [i for i in fc[cut_point :] if i != '.']
+        # If truncation was unsuccessful output null fc
+        if (len(l_symbols) < 2 or len(r_symbols) < 2) or \
+           (set(l_symbols) != set('(') or set(r_symbols) != set(')')):
+            folded_stem_inds = np.zeros(4)
+        else:
+            pass
+    
+    return folded_stem_inds
