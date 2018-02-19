@@ -197,7 +197,7 @@ def count_crosslinks(seq, fc):
 def calculate_stem_mfe(stem_inds, ref_seq, TRUNC_FLAG=1):
     """
     Calculate the minimum free energy structure and energy of a stem. Attempt
-    truncation if possible.
+    truncation if possible (and if desired, as indicated by the TRUNC_FLAG).
 
     Parameters
     ----------
