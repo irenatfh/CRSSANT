@@ -259,5 +259,4 @@ def calculate_stem_mfe(stem_inds, ref_seq, TRUNC_FLAG=1):
                 mfe = 0.0
             else:
                 pass
-    
     return folded_stem_inds, [fc, mfe]
