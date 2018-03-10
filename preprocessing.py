@@ -2,7 +2,7 @@ import subfunctions as sf
 
 
 ################################################################################
-def parse_reference_bed(ref_file):
+def parse_reference_bed(ref_file, region):
     """
     Parse a reference BED file into a dictionary.
 
@@ -10,6 +10,8 @@ def parse_reference_bed(ref_file):
     ----------
     ref_file : str
         Reference file path
+    region : str
+        Genomic region of interest
 
     Returns
     -------
@@ -21,19 +23,18 @@ def parse_reference_bed(ref_file):
     with open(ref_file, 'r') as f:
         for line in f:
             data = line.split('\t')
-            region = data[0]
-            if region not in ref_dict.keys():
-                ref_dict[region] = {}
-            pos_start = int(data[1]) - 1  # Biology is 1-indexed
-            pos_stop = int(data[2]) - 1
-            rna = data[3]
-            ref_dict[region][rna] = [pos_start, pos_stop]
+            data_region = data[0]
+            if data_region == region:
+                pos_start = int(data[1]) - 1  # Biology is 1-indexed
+                pos_stop = int(data[2]) - 1
+                rna = data[3]
+                ref_dict[rna] = [pos_start, pos_stop]
             
     return ref_dict
 
 
 ################################################################################
-def get_reference_seq(ref_file):
+def get_reference_seq(ref_file, region):
     """
     Parse a reference sequence file into a dictionary
 
@@ -41,6 +42,8 @@ def get_reference_seq(ref_file):
     ----------
     ref_file : str
         Reference sequence file path
+    region : str
+        Genomic region of interest
 
     Returns
     -------
@@ -48,15 +51,21 @@ def get_reference_seq(ref_file):
         {genomic region:sequence}
 
     """
-    ref_seq_dict = {}
+    ref_seq = ''
+    region_flag = 0
     with open(ref_file, 'r') as f:
         for line in f:
             if line[0] == '>':
                 ref_key = line.split('>')[-1][:-1]
+                if ref_key == region:
+                    region_flag = 1
+                else:
+                    region_flag = 0
             else:
-                ref_seq_dict[ref_key] = line[:-1]
+                if region_flag == 1:
+                    ref_seq += line[:-1]
                 
-    return ref_seq_dict
+    return ref_seq
 
 
 ################################################################################
@@ -90,7 +99,10 @@ def parse_reads(reads_file, ref_dict, output_sam='test.sam'):
                     reads_dict[region] = {}
                 pos_align = int(data[3])
                 cigar_str = data[5]
-                xg = data[19]
+                if len(data) > 19:
+                    xg = data[19]
+                else:
+                    xg = 'XG:i:0'
                 if (xg == 'XG:i:0') or (xg == 'XG:i:1'):
                     cigar_ops, cigar_lens = sf.process_cigar(cigar_str)
                     if cigar_ops == ['S', 'M', 'N', 'M', 'S']:
