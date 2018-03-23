@@ -94,9 +94,6 @@ def parse_reads(reads_file, ref_dict, output_sam='test.sam'):
             if line[0] != '@':
                 data = line.split('\n')[0].split('\t')
                 read_id = data[0]
-                region = data[2]
-                if region not in reads_dict.keys():
-                    reads_dict[region] = {}
                 pos_align = int(data[3])
                 cigar_str = data[5]
                 if len(data) > 19:
@@ -111,13 +108,13 @@ def parse_reads(reads_file, ref_dict, output_sam='test.sam'):
                         r_pos_start = l_pos_stop + cigar_lens[2] + 1
                         r_pos_stop = r_pos_start + cigar_lens[3] - 1
                         l_arm_rna = [rna for (rna, [rna_start, rna_stop]) 
-                                     in ref_dict[region].items() if l_pos_start 
+                                     in ref_dict.items() if l_pos_start 
                                      in range(rna_start, rna_stop)]
                         r_arm_rna = [rna for (rna, [rna_start, rna_stop]) 
-                                     in ref_dict[region].items() if r_pos_start 
+                                     in ref_dict.items() if r_pos_start 
                                      in range(rna_start, rna_stop)]
                         if (len(l_arm_rna) > 0) and (len(r_arm_rna) > 0):
-                            reads_dict[region][read_id] = [
+                            reads_dict[read_id] = [
                                 l_pos_start, l_pos_stop, 
                                 r_pos_start, r_pos_stop,
                                 l_arm_rna[0], r_arm_rna[0]]
