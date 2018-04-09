@@ -6,7 +6,7 @@ import subfunctions as sf
 
 
 ################################################################################
-def graph_reads(rna_ids, rna_inds, reads_dict, t=0.25):
+def graph_reads(rna_ids, rna_inds, reads_dict, t=0.3):
     """
     Create a weighted graph representation of the reads based on their overlaps.
 
