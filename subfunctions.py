@@ -233,12 +233,12 @@ def calculate_stem_mfe(stem_inds, ref_seq, TRUNC_FLAG=1):
     else:
         if TRUNC_FLAG == 1:
             # Check for folding results that might be fixable by truncation
-            if (set(fc[:cut_point]) != set('.(')):
+            if set(fc[:cut_point]).issubset(set('.(')) is False:
                 off_inds = [i for i in range(cut_point) if fc[i] == ')']
                 l_arm = l_arm[off_inds[-1] + 1 : ]
                 folded_stem_inds[0] += off_inds[-1] + 1
                 read_start += off_inds[-1] + 1
-            if (set(fc[cut_point:]) != set('.)')):
+            if set(fc[cut_point:]).issubset(set('.)')) is False:
                 off_inds = [i for i in range(len(r_arm)) if 
                             fc[cut_point : ][i] == '(']
                 r_arm = r_arm[ : off_inds[0]]

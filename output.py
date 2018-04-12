@@ -44,14 +44,7 @@ def write_info_bed(bed_file, dg_dict, region):
 
 
 ################################################################################
-def write_helix_bed(bed_file, dg_dict, region, rna, rna_1, rna_2, rna_order):
-    rna_dist = abs(rna_order.index(rna_1) - rna_order.index(rna_2))
-    if rna_dist == 0:
-        color = '0,0,0'
-    elif rna_dist == 1:
-        color = '0,0,255'
-    elif rna_dist > 1:
-        color = '255,0,0'
+def write_bp_bed(bed_file, dg_dict, region, rna, rna_1, rna_2):
     with open(bed_file, 'a') as f_write:
         f_write.write('track graphType=arc itemRgb=on\n')
         for (dg, dg_info) in dg_dict.items():
@@ -59,7 +52,7 @@ def write_helix_bed(bed_file, dg_dict, region, rna, rna_1, rna_2, rna_order):
                 helix_inds = dg_info['basepairs'] + 1  # biology is 1-indexed
                 for [left_ind, right_ind] in helix_inds.T:
                     line = [region, str(left_ind), str(right_ind), rna, '1',
-                            '+', str(left_ind), str(left_ind), color]
+                            '+', str(left_ind), str(left_ind), '0,0,0']
                     f_write.write('\t'.join(line) + '\n')
              
     return
@@ -67,7 +60,7 @@ def write_helix_bed(bed_file, dg_dict, region, rna, rna_1, rna_2, rna_order):
 
 ################################################################################
 def write_aux(aux_file, dg_dict, dg_reads_dict, reads_dict):
-    with open(aux_file, 'a') as f_write:
+    with open(aux_file, 'a') as f_write:       
         for (dg, dg_info) in dg_dict.items():
             coverage = dg_info['coverage']
             cl_sites = dg_info['cl_sites']

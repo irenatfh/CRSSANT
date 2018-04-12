@@ -89,7 +89,7 @@ def parse_reads(reads_file, ref_dict, output_sam='test.sam'):
 
     """
     reads_dict = {}
-    with open(reads_file, 'r') as f_read, open(output_sam, 'w') as f_write:
+    with open(reads_file, 'r') as f_read:
         for line in f_read:
             if line[0] != '@':
                 data = line.split('\n')[0].split('\t')
@@ -118,7 +118,33 @@ def parse_reads(reads_file, ref_dict, output_sam='test.sam'):
                                 l_pos_start, l_pos_stop, 
                                 r_pos_start, r_pos_stop,
                                 l_arm_rna[0], r_arm_rna[0]]
-            else:
-                f_write.write(line)
                             
     return reads_dict
+
+
+################################################################################
+def init_output_files(reads_sam,
+                      output_sam, output_info_bed, output_bp_bed, output_aux):
+    with open(reads_sam, 'r') as f_r, open(output_sam, 'w') as f_w:
+        for line in f_r:
+            if line[0] == '@':
+                f_w.write(line)
+            else:
+                pass
+            
+    with open(output_info_bed, 'w') as f_w:
+        pass
+    
+    with open(output_bp_bed, 'w') as f_w:
+        pass
+    
+    with open(output_aux, 'w') as f_w:
+        header = ['DG_coverage',
+                  'UU_cl,UC_cl,helix_length', 
+                  'L_start_start,L_start_stop,L_start_std', 
+                  'L_stop_start,L_stop_stop,L_stop_std',
+                  'R_start_start,R_start_stop,R_start_std', 
+                  'R_stop_start,R_stop_stop,R_stop_std']
+        f_w.write('\t'.join(header) + '\n')
+        
+        

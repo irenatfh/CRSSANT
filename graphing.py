@@ -22,7 +22,7 @@ def graph_reads(rna_ids, rna_inds, reads_dict, t=0.3):
     reads_dict : dict
         Dictionary of reads and reads information
     t : float
-        Coverage threshold
+        Overlap threshold
 
     Returns
     -------

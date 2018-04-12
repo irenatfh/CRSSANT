@@ -33,7 +33,7 @@ def get_preliminary_dgs(reads_dict, reads_dg_dict):
 
 
 ################################################################################
-def adjust_dgs(dg_reads_dict, reads_ids, reads_dict, dg_index):
+def adjust_dgs(dg_reads_dict, reads_ids, reads_dict, dg_index, t=0.3):
     """
     Adjust duplex groups by adding in the reads that were not sampled.
     
@@ -51,6 +51,8 @@ def adjust_dgs(dg_reads_dict, reads_ids, reads_dict, dg_index):
     reads_dict : dict
         Dictionary of reads and reads information
     dg_index : int
+    t : float
+        Overlap threshold
 
     Returns
     -------
@@ -69,7 +71,7 @@ def adjust_dgs(dg_reads_dict, reads_ids, reads_dict, dg_index):
                                 int(dg_reads_info[2]), int(dg_reads_info[3])])
             overlaps = sf.get_overlaps(read_inds, dg_inds)
             sum_ratio = overlaps[0]/overlaps[3] + overlaps[1]/overlaps[4]
-            if (overlaps[0]/overlaps[3] > 0.25) and (overlaps[1]/overlaps[4] > 0.25):
+            if (overlaps[0]/overlaps[3] > t) and (overlaps[1]/overlaps[4] > t):
                 dg_overlaps[dg] = sum_ratio
         if len(dg_overlaps) == 0:
             dg_reads_dict[dg_index] = [read_id]
