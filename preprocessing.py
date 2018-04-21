@@ -2,7 +2,7 @@ import subfunctions as sf
 
 
 ################################################################################
-def parse_reference_bed(ref_file, region):
+def parse_reference_bed(ref_file, region, genes):
     """
     Parse a reference BED file into a dictionary.
 
@@ -12,11 +12,13 @@ def parse_reference_bed(ref_file, region):
         Reference file path
     region : str
         Genomic region of interest
+    genes : list
+        Genes of interest
 
     Returns
     -------
     dict
-        {genomic region:{rna:[start position, stop position]}}
+        {gene:[start position, stop position]}
 
     """
     ref_dict = {}
@@ -24,11 +26,11 @@ def parse_reference_bed(ref_file, region):
         for line in f:
             data = line.split('\t')
             data_region = data[0]
-            if data_region == region:
+            gene = data[3]
+            if (data_region == region) and (gene in genes):
                 pos_start = int(data[1]) - 1  # Biology is 1-indexed
                 pos_stop = int(data[2]) - 1
-                rna = data[3]
-                ref_dict[rna] = [pos_start, pos_stop]
+                ref_dict[gene] = [pos_start, pos_stop]
             
     return ref_dict
 
