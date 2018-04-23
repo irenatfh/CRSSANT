@@ -2,6 +2,7 @@ import numpy as np
 import sys
 sys.path.append('/home/ihwang/software/ViennaRNA-2.4.3/interfaces/Python3')
 import RNA
+import ushuffle
 
 
 ################################################################################
@@ -16,6 +17,8 @@ def calculate_stem_mfe(stem_inds, ref_seq, TRUNC_FLAG=1):
         RNA stem arm indices [left_start, left_stop, right_start, right_start]
     ref_seq : str
         Reference sequence
+    TRUNC_FLAG : int
+        
 
     Returns
     -------
@@ -99,3 +102,28 @@ def shift_dg(dg_inds, inds_shift, ref_seq, ARM_FLAG=0):
                                                             TRUNC_FLAG=0)
         mfes_shifted.append(mfe)
     return mfes_shifted
+
+
+################################################################################
+def shuffle_dg(l_arm, r_arm, n_shuffles):
+    cut_point = len(l_arm) + 1
+    shuffled_seqs = set()
+    shuffled_mfes = []
+    while len(shuffled_seqs) < n_shuffles:
+        seq = l_arm + r_arm
+        if seq not in shuffled_seqs:
+            shuffled_seqs.add(seq)
+            [shuffled_fc, shuffled_mfe] = RNA.fold_compound(
+                l_arm + '&' + r_arm).mfe_dimer()
+            l_symbols = [i for i in shuffled_fc[ : cut_point] if i != '.']
+            r_symbols = [i for i in shuffled_fc[cut_point : ] if i != '.']
+            if (len(l_symbols) < 2 or len(r_symbols) < 2) or \
+            (set(l_symbols) != set('(') or set(r_symbols) != set(')')):
+                shuffled_fc = '.' * len(seq)
+                shuffled_mfe = 0.0
+            shuffled_mfes.append(shuffled_mfe)
+        ushuffle.shuffle1(l_arm, len(l_arm), 2)
+        l_arm = ushuffle.shuffle2()
+        ushuffle.shuffle1(r_arm, len(r_arm), 2)
+        r_arm = ushuffle.shuffle2()
+    return shuffled_mfes
