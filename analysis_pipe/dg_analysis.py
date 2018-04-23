@@ -1,8 +1,8 @@
 import numpy as np
 import sys
+from . import subfunctions as sf
 sys.path.append('/home/ihwang/software/ViennaRNA-2.4.3/interfaces/Python3')
 import RNA
-import subfunctions as sf
 
 
 ################################################################################

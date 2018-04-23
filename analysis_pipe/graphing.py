@@ -2,7 +2,7 @@ import numpy as np
 import networkx as nx
 from sklearn.cluster import KMeans
 import scipy as sp
-import subfunctions as sf
+from . import subfunctions as sf
 
 
 ################################################################################

@@ -1,4 +1,4 @@
-import subfunctions as sf
+from . import subfunctions as sf
 
 
 ################################################################################
