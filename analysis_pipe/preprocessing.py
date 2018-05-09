@@ -1,101 +1,84 @@
+# This file is part of CRSSANT:
+# Computational RNA Secondary Structure Analysis using Network Techniques
+#
+###############################################################################
+"""
+This module is a collection of functions that perform pre-processing tasks
+in preparation for PARIS reads analysis.
+"""
+
+# Author: Irena Fischer-Hwang
+# Contact: ihwang@stanford.edu
+
 from . import subfunctions as sf
 
 
-################################################################################
-def parse_reference_bed(ref_file, region, genes):
+def get_reference_dict(seq_file, gene_file):
     """
-    Parse a reference BED file into a dictionary.
+    Function to parse reference sequence and gene files into a dictionary
 
     Parameters
     ----------
-    ref_file : str
-        Reference file path
-    region : str
-        Genomic region of interest
-    genes : list
-        Genes of interest
+    seq_file : str
+        Path to reference sequence file (FASTA)
+    gene_file : 
+        Path to reference gene file (BED)
 
     Returns
     -------
-    dict
-        {gene:[start position, stop position]}
+    ref_dict : dict
+        Nested dictionary of region sequence and genes
+        {region:{seq: str, genes: {str: list}}
 
     """
     ref_dict = {}
-    with open(ref_file, 'r') as f:
+    with open(seq_file, 'r') as f:
+        for line in f:
+            if line[0] == '>':
+                region = line.split('>')[-1].rstrip()
+            else:
+                ref_dict[region] = {}
+                ref_dict[region]['sequence'] = line.rstrip()
+                ref_dict[region]['genes'] = {}
+
+    with open(gene_file, 'r') as f:
         for line in f:
             data = line.split('\t')
-            data_region = data[0]
+            region = data[0]
+            gene_start = int(data[1]) - 1
+            gene_stop = int(data[2]) - 1
             gene = data[3]
-            if (data_region == region) and (gene in genes):
-                pos_start = int(data[1]) - 1  # Biology is 1-indexed
-                pos_stop = int(data[2]) - 1
-                ref_dict[gene] = [pos_start, pos_stop]
-            
+            if gene not in ref_dict[region]['genes'].keys():
+                ref_dict[region]['genes'][gene] = [gene_start, gene_stop]
     return ref_dict
 
 
-################################################################################
-def get_reference_seq(ref_file, region):
+def parse_reads(reads_file, ref_dict):
     """
-    Parse a reference sequence file into a dictionary
-
-    Parameters
-    ----------
-    ref_file : str
-        Reference sequence file path
-    region : str
-        Genomic region of interest
-
-    Returns
-    -------
-    dict
-        {genomic region:sequence}
-
-    """
-    ref_seq = ''
-    region_flag = 0
-    with open(ref_file, 'r') as f:
-        for line in f:
-            if line[0] == '>':
-                ref_key = line.split('>')[-1][:-1]
-                if ref_key == region:
-                    region_flag = 1
-                else:
-                    region_flag = 0
-            else:
-                if region_flag == 1:
-                    ref_seq += line[:-1]
-                
-    return ref_seq
-
-
-################################################################################
-def parse_reads(reads_file, ref_dict, output_sam='test.sam'):
-    """
-    Parse a reads SAM file into a dictionary.
+    Function to parse a reads file into a dictionary
 
     Parameters
     ----------
     reads_file : str
-        Reads file path
+        Path to reads file (SAM)
     ref_dict : str
-        Reference file dictionary
-    output_sam : str
-        Output file name
+        Reference dictionary
 
     Returns
     -------
-    dict
-        {read ID:[L start, L stop, R start, R stop, L arm RNA, R arm RNA]}
+    reads_dict : dict
+        Dictionary of read information
+        {read ID:[L start, L stop, R start, R stop, 
+                  region, L arm gene, R arm gene]}
 
     """
     reads_dict = {}
-    with open(reads_file, 'r') as f_read:
-        for line in f_read:
+    with open(reads_file, 'r') as f:
+        for line in f:
             if line[0] != '@':
-                data = line.split('\n')[0].split('\t')
+                data = line.rstrip().split('\t')
                 read_id = data[0]
+                region = data[2]
                 pos_align = int(data[3])
                 cigar_str = data[5]
                 if len(data) > 19:
@@ -109,38 +92,58 @@ def parse_reads(reads_file, ref_dict, output_sam='test.sam'):
                         l_pos_stop = l_pos_start + cigar_lens[1] - 1
                         r_pos_start = l_pos_stop + cigar_lens[2] + 1
                         r_pos_stop = r_pos_start + cigar_lens[3] - 1
-                        l_arm_rna = [rna for (rna, [rna_start, rna_stop]) 
-                                     in ref_dict.items() if l_pos_start 
-                                     in range(rna_start, rna_stop)]
-                        r_arm_rna = [rna for (rna, [rna_start, rna_stop]) 
-                                     in ref_dict.items() if r_pos_start 
-                                     in range(rna_start, rna_stop)]
+                        l_arm_rna = [rna for (rna, [rna_start, rna_stop]) in 
+                                     ref_dict[region][genes].items() 
+                                     if l_pos_start in 
+                                     range(rna_start, rna_stop)]
+                        r_arm_rna = [rna for (rna, [rna_start, rna_stop]) in 
+                                     ref_dict[region][genes].items() 
+                                     if r_pos_start in 
+                                     range(rna_start, rna_stop)]
                         if (len(l_arm_rna) > 0) and (len(r_arm_rna) > 0):
-                            reads_dict[read_id] = [
-                                l_pos_start, l_pos_stop, 
-                                r_pos_start, r_pos_stop,
-                                l_arm_rna[0], r_arm_rna[0]]
-                            
+                            reads_dict[read_id] = [l_pos_start, l_pos_stop, 
+                                                   r_pos_start, r_pos_stop,
+                                                   region,
+                                                   l_arm_rna[0], r_arm_rna[0]]
     return reads_dict
 
 
-################################################################################
-def init_output_files(reads_sam,
-                      output_sam, output_info_bed, output_bp_bed, output_aux):
-    with open(reads_sam, 'r') as f_r, open(output_sam, 'w') as f_w:
+def init_outputs(in_sam, out_sam, out_info, out_bp, out_aux):
+    """
+    Function to initialize output files
+
+    Parameters
+    ----------
+    in_sam : str
+        Path to input reads file (SAM)
+    out_sam : str
+        Path to output reads file (SAM)
+    out_info : str
+        Path to output info file (BED)
+    out_bp : str
+        Path to output basepairing file (BED)
+    out_aux : str
+        Path to output auxiliary file (AUX)
+
+    Returns
+    -------
+    files
+
+    """
+    with open(in_sam, 'r') as f_r, open(out_sam, 'w') as f_w:
         for line in f_r:
             if line[0] == '@':
                 f_w.write(line)
             else:
                 pass
             
-    with open(output_info_bed, 'w') as f_w:
+    with open(out_info, 'w') as f_w:
         pass
     
-    with open(output_bp_bed, 'w') as f_w:
+    with open(out_bp, 'w') as f_w:
         pass
     
-    with open(output_aux, 'w') as f_w:
+    with open(out_aux, 'w') as f_w:
         header = ['DG_coverage',
                   'UU_cl,UC_cl,helix_length', 
                   'L_start_start,L_start_stop,L_start_std', 
