@@ -153,3 +153,80 @@ def init_outputs(in_sam, out_sam, out_info, out_bp, out_aux):
         f_w.write('\t'.join(header) + '\n')
         
         
+def get_genes(ref_dict, regions):
+    """
+    Function to get list of genes when regions are specified
+
+    Parameters
+    ----------
+    ref_dict : dict
+        Reference dictionary
+    regions : list
+        Specified list of regions
+
+    Returns
+    -------
+    list
+
+    """
+    genes = []
+    for region in regions:
+        genes += list(ref_dict[region]['genes'].keys())
+    return genes
+
+
+def get_regions(ref_dict, genes):
+    """
+    Function to get list of regions when genes are specified
+
+    Parameters
+    ----------
+    ref_dict : dict
+        Reference dictionary
+    genes : list
+        Specified list of genes
+
+    Returns
+    -------
+    list
+
+    """
+    regions = []
+    for gene in genes:
+        for region in ref_dict.keys():
+            if gene in ref_dict[region]['genes'].keys():
+                regions.append(region)
+                continue
+    regions = list(set(regions))
+    return regions
+        
+
+def get_analysis_dict(ref_dict, regions, genes):
+    """
+    Function to compose analysis regions and genes into a dict
+
+    Parameters
+    ----------
+    ref_dict : dict
+        Reference dictionary
+    regions : list
+        Specified list of regions
+    genes : list
+        Specified list of genes
+
+    Returns
+    -------
+    dict
+    """
+    analysis_dict = {}
+    for gene in genes:
+        for region in ref_dict.keys():
+            if gene in ref_dict[region]['genes'].keys():
+                if region not in analysis_dict.keys():
+                    analysis_dict[region] = []
+                analysis_dict[region].append(gene)
+                continue
+    for region in regions:
+        if region not in analysis_dict.keys():
+            analysis_dict[region] = list(ref_dict[region]['genes'].keys())
+    return analysis_dict
