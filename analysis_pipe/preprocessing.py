@@ -4,7 +4,6 @@
 ###############################################################################
 """
 This module is a collection of functions that perform pre-processing tasks
-in preparation for PARIS reads analysis.
 """
 
 # Author: Irena Fischer-Hwang
@@ -92,19 +91,20 @@ def parse_reads(reads_file, ref_dict):
                         l_pos_stop = l_pos_start + cigar_lens[1] - 1
                         r_pos_start = l_pos_stop + cigar_lens[2] + 1
                         r_pos_stop = r_pos_start + cigar_lens[3] - 1
-                        l_arm_rna = [rna for (rna, [rna_start, rna_stop]) in 
-                                     ref_dict[region][genes].items() 
-                                     if l_pos_start in 
-                                     range(rna_start, rna_stop)]
-                        r_arm_rna = [rna for (rna, [rna_start, rna_stop]) in 
-                                     ref_dict[region][genes].items() 
-                                     if r_pos_start in 
-                                     range(rna_start, rna_stop)]
-                        if (len(l_arm_rna) > 0) and (len(r_arm_rna) > 0):
-                            reads_dict[read_id] = [l_pos_start, l_pos_stop, 
-                                                   r_pos_start, r_pos_stop,
-                                                   region,
-                                                   l_arm_rna[0], r_arm_rna[0]]
+                        for (gene, inds) in ref_dict[region]['genes'].items():
+                            if inds[0] <= l_pos_start <= inds[1]:
+                                l_gene = gene
+                            if inds[0] <= l_pos_start <= inds[1]:
+                                r_gene = gene
+                            try:
+                                l_gene, r_gene
+                            except NameError:
+                                pass
+                            else:
+                                reads_dict[read_id] = [
+                                    l_pos_start, l_pos_stop, r_pos_start, 
+                                    r_pos_stop, region, l_gene, r_gene
+                                ]
     return reads_dict
 
 
@@ -142,14 +142,13 @@ def init_outputs(in_sam, out_sam, out_info, out_bp, out_aux):
     
     with open(out_bp, 'w') as f_w:
         pass
-    
     with open(out_aux, 'w') as f_w:
-        header = ['DG_coverage',
-                  'UU_cl,UC_cl,helix_length', 
-                  'L_start_start,L_start_stop,L_start_std', 
-                  'L_stop_start,L_stop_stop,L_stop_std',
-                  'R_start_start,R_start_stop,R_start_std', 
-                  'R_stop_start,R_stop_stop,R_stop_std']
+        header = [
+            'DG_coverage', 'UU_cl,UC_cl,helix_length', 
+            'L_start_start,L_start_stop,L_start_std', 
+            'L_stop_start,L_stop_stop,L_stop_std',
+            'R_start_start,R_start_stop,R_start_std', 
+            'R_stop_start,R_stop_stop,R_stop_std']
         f_w.write('\t'.join(header) + '\n')
         
         

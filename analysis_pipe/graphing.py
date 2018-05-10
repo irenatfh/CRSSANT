@@ -1,3 +1,15 @@
+# This file is part of CRSSANT:
+# Computational RNA Secondary Structure Analysis using Network Techniques
+#
+###############################################################################
+"""
+This module is a collection of functions that perform graphing-related tasks
+"""
+
+# Author: Irena Fischer-Hwang
+# Contact: ihwang@stanford.edu
+
+
 import numpy as np
 import networkx as nx
 from sklearn.cluster import KMeans
@@ -5,10 +17,9 @@ import scipy as sp
 from . import subfunctions as sf
 
 
-################################################################################
 def graph_reads(rna_ids, rna_inds, reads_dict, t=0.3):
     """
-    Create a weighted graph representation of the reads based on their overlaps.
+    Create a weighted graph representation of the reads
 
     Reads are represented by nodes. Two reads that have left and right overlap
     ratios > threshold t are connected by an edge of weight overlap / span.
@@ -78,7 +89,6 @@ def graph_reads(rna_ids, rna_inds, reads_dict, t=0.3):
                                            overlap_r/span_r))
                 else:
                     loop_flag = 0
-                    
     return graph
 
 

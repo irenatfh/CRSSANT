@@ -44,7 +44,7 @@ def write_info_bed(bed_file, dg_dict, region):
 
 
 ################################################################################
-def write_bp_bed(bed_file, dg_dict, region, rna, rna_1, rna_2):
+def write_bp_bed(bed_file, dg_dict, region, rna):
     with open(bed_file, 'a') as f_write:
         f_write.write('track graphType=arc itemRgb=on\n')
         for (dg, dg_info) in dg_dict.items():
