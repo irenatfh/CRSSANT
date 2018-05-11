@@ -99,41 +99,42 @@ def main():
 
     # Analyze reads
     start_time_all = time.time()
-    with open(files.log, 'w') as fl:
-        dg_index = 0
-        ng_index = 0
-        reads_ids = np.array(list(reads_dict.keys()))
-        reads_inds = np.array(list(reads_dict.values()))
+    with open(files.log, 'w') as log:
+        dg_ind = 0
+        ng_ind = 0
         for region in analysis_dict:
             for gene in analysis_dict[region]:
                 start_time = time.time()
-                gene_reads = reads_ids[
-                    (reads_inds[:, 4] == region) & (reads_inds[:, 5] == gene) & 
-                    (reads_inds[:, 6] == gene)
+                gene_ids = [
+                    read_id for (read_id, read_info) in reads_dict.items() 
+                    if (read_info[4] == region) & (read_info[5] == gene) 
+                    & (read_info[6] == gene)
                 ]
-                fl.write(
+                log.write(
                     'Analyzing %s reads spanning RNAs %s\n' 
-                    %(len(gene_reads), gene)
+                    %(len(gene_ids), gene)
                 )
-                if len(gene_reads) > 1:
-                    fl.write(time.asctime() + ' Graphing reads\n')
-                    if len(gene_reads) > max_reads:
-                        sampled_inds = np.random.choice(
-                            len(gene_reads), max_reads, replace=False
+                if len(gene_ids) > 1:
+                    log.write(time.asctime() + ' Graphing reads\n')
+                    if len(gene_ids) > max_reads:
+                        inds_samp = np.random.choice(
+                            len(gene_ids), max_reads, replace=False
                         )
-                        unsampled_inds = np.setdiff1d(
-                            range(len(gene_reads)), sampled_inds
+                        inds_unsamp = np.setdiff1d(
+                            range(len(gene_ids)), inds_samp
                         )  
                         graph = gp.graph_reads(
-                            gene_reads[sampled_inds], 
-                            gene_reads[sampled_inds], 
+                            [gene_ids[ind] for ind in inds_samp], 
                             reads_dict, t=min_overlap
                         )
                     else:
-                        graph = gp.graph_reads(gene_reads, gene_reads, 
-                                               reads_dict, t=min_overlap
-                                              )
+                        graph = gp.graph_reads(
+                            gene_ids, reads_dict, t=min_overlap
+                        )
+                    reads_dg_dict, dg_ind = gp.cluster_graph(graph, dg_ind)
+
                     
     
 if __name__ == '__main__':
     main()
+###############################################################################
