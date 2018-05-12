@@ -28,7 +28,6 @@ def get_reference_dict(seq_file, gene_file):
     ref_dict : dict
         Nested dictionary of region sequence and genes
         {region:{seq: str, genes: {str: list}}
-
     """
     ref_dict = {}
     with open(seq_file, 'r') as f:
@@ -69,7 +68,6 @@ def parse_reads(reads_file, ref_dict):
         Dictionary of read information
         {read ID:[L start, L stop, R start, R stop, 
                   region, L arm gene, R arm gene]}
-
     """
     reads_dict = {}
     with open(reads_file, 'r') as f:
@@ -127,8 +125,6 @@ def init_outputs(in_sam, out_sam, out_info, out_bp, out_aux):
 
     Returns
     -------
-    files
-
     """
     with open(in_sam, 'r') as f_r, open(out_sam, 'w') as f_w:
         for line in f_r:
@@ -165,8 +161,7 @@ def get_genes(ref_dict, regions):
 
     Returns
     -------
-    list
-
+    genes : list
     """
     genes = []
     for region in regions:
@@ -187,8 +182,7 @@ def get_regions(ref_dict, genes):
 
     Returns
     -------
-    list
-
+    regions : list
     """
     regions = []
     for gene in genes:
@@ -215,7 +209,7 @@ def get_analysis_dict(ref_dict, regions, genes):
 
     Returns
     -------
-    dict
+    analysis_dict : dict
     """
     analysis_dict = {}
     for gene in genes:

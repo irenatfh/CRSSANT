@@ -1,3 +1,15 @@
+# This file is part of CRSSANT:
+# Computational RNA Secondary Structure Analysis using Network Techniques
+#
+###############################################################################
+"""
+This module is a collection of functions that perform DG analysis tasks
+"""
+
+# Author: Irena Fischer-Hwang
+# Contact: ihwang@stanford.edu
+
+
 import numpy as np
 import sys
 from . import subfunctions as sf
@@ -5,51 +17,51 @@ sys.path.append('/home/ihwang/software/ViennaRNA-2.4.3/interfaces/Python3')
 import RNA
 
 
-################################################################################
 def get_preliminary_dgs(reads_dict, reads_dg_dict):
     """
-    Organize reads into preliminary duplex groups (DGs) based on spectral 
-    clustering.
+    Function that groups reads into preliminary duplex groups (DGs)
 
     Parameters
     ----------
     reads_dict : dict
-        Dictionary of reads and reads information
+        Dictionary of reads
     reads_dg_dict : dict
         Dictionary of reads and their spectral clustering DG assignments
 
     Returns
     -------
-    dict
-        {dg:[read ids]}
-
+    dg_reads_dict : dict
     """
     dgs_list = set(reads_dg_dict.values())
     dg_reads_dict = {}
     for dg in dgs_list:
-        dg_reads_list = [i[0] for i in reads_dg_dict.items() if i[1] == dg]
+        dg_reads_list = [
+            read_id for (read_id, read_dg) in reads_dg_dict.items() 
+            if read_dg == dg
+        ]
         dg_reads_dict[dg] = dg_reads_list
     return dg_reads_dict
 
 
-################################################################################
-def adjust_dgs(dg_reads_dict, reads_ids, reads_dict, dg_index, t=0.3):
+def adjust_dgs(dg_reads_dict, reads_ids, reads_dict, dg_ind, t=0.3):
     """
-    Adjust duplex groups by adding in the reads that were not sampled.
-    
-    Each read is checked for overlap with existing DGs.
-    + If the read has no overlap with any DGs, add as DG.
-    + If the read has equal overlaps between at least two DGs, add as new DG.
+    Function to adjust duplex groups
+
+    The goal is to assign reads that were not sampled to DGs. Each read is 
+    checked for overlap with an existing DGs.
+    + If the read has no overlap with any DGs, create a new DG.
+    + If the read overlaps at least two DGs equally, again create a new DG.
+    + Otherwise, add the read to the DG with which it has the largest overlap
     Note that this process updates the dg_reads_dict throughout the loop.
 
     Parameters
     ----------
     dg_reads_dict : dict
         Dictionary of reads and their spectral clustering DG assignments
-    reads_ids : np array
-        Numpy array of reads indices
+    reads_ids : list
+        List of reads indices
     reads_dict : dict
-        Dictionary of reads and reads information
+        Dictionary of reads
     dg_index : int
     t : float
         Overlap threshold
@@ -57,39 +69,38 @@ def adjust_dgs(dg_reads_dict, reads_ids, reads_dict, dg_index, t=0.3):
     Returns
     -------
     dict, int
-        Updated dg_reads_dict, DG index to start from
-
     """
-    import time
-    for (index, read_id) in enumerate(reads_ids):
-        read_inds = reads_dict[read_id][:-2]
+    new_dg = 0
+    for read_id in reads_ids:
+        read_inds = reads_dict[read_id][:4]
         dg_overlaps = {}
-        for (dg, dg_reads_list) in dg_reads_dict.items():
-            dg_reads_info = np.median(
-                np.array([reads_dict[i][:-2] for i in dg_reads_list]), axis=0)
-            dg_inds = np.array([int(dg_reads_info[0]), int(dg_reads_info[1]),
-                                int(dg_reads_info[2]), int(dg_reads_info[3])])
-            overlaps = sf.get_overlaps(read_inds, dg_inds)
-            sum_ratio = overlaps[0]/overlaps[3] + overlaps[1]/overlaps[4]
-            if (overlaps[0]/overlaps[3] > t) and (overlaps[1]/overlaps[4] > t):
-                dg_overlaps[dg] = sum_ratio
+        for (dg, dg_reads) in dg_reads_dict.items():
+            dg_inds = np.median(
+                np.array(
+                    [reads_dict[dg_read][:4] for dg_read in dg_reads]
+                ), axis=0
+            )
+            ratio_l, ratio_r = sf.get_overlap_ratios(read_inds, dg_inds)
+            if (ratio_l > t) and (ratio_r > t):
+                dg_overlaps[dg] = ratio_l + ratio_r
         if len(dg_overlaps) == 0:
-            dg_reads_dict[dg_index] = [read_id]
-            dg_index += 1
+            new_dg = 1
         else:
             max_overlap = max(dg_overlaps.values())
-            max_dgs_list = [i for i in dg_overlaps.keys() 
-                            if dg_overlaps[i] == max_overlap]
-            if len(max_dgs_list) == 1:
-                dg_reads_dict[list(dg_overlaps.keys())[0]].append(read_id)
-            else:
-                dg_reads_dict[dg_index] = [read_id]
-                dg_index += 1
-                
-    return dg_reads_dict, dg_index
+            max_dgs_list = [
+                i for i in dg_overlaps.keys() if dg_overlaps[i] == max_overlap
+            ]
+            if len(max_dgs_list) > 1:
+                new_dg = 1
+        if new_dg == 0:
+            dg_reads_dict[max_dgs_list[0]].append(read_id)
+        else:
+            dg_reads_dict[dg_ind] = [read_id]
+            dg_ind += 1
+        new_dg = 0 
+    return dg_reads_dict, dg_ind
 
 
-################################################################################
 def fold_dgs(dg_reads_dict, reads_dict, ref_seq):
     """
     Fold DGs and calculate other DG information
@@ -177,7 +188,6 @@ def fold_dgs(dg_reads_dict, reads_dict, ref_seq):
     return dg_folded_dict
 
 
-################################################################################
 def filter_dgs(dg_dict):
     """
     Filter out DGs with fewer than 2 reads.
@@ -203,7 +213,6 @@ def filter_dgs(dg_dict):
     return filtered_dict
 
 
-################################################################################
 def add_coverage_to_dgs(dg_dict, reads_dict):
     """
     Add coverage threshold to DG dictionary.
@@ -249,7 +258,6 @@ def add_coverage_to_dgs(dg_dict, reads_dict):
     return dg_cov_dict
 
 
-################################################################################
 def add_ngs_to_dgs(dg_dict, dg_reads_dict, reads_dict, ng_index):
     """
     Add non-overlapping groups (NGs) to DG dict.

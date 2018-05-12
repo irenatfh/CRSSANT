@@ -19,7 +19,7 @@ from . import subfunctions as sf
 
 def graph_reads(gene_ids, reads_dict, t=0.3):
     """
-    Create a weighted graph representation of the reads
+    Function that creates a weighted graph representation of the reads
 
     Reads are represented by nodes. Two reads that have left and right overlap
     ratios > threshold t are connected by an edge of weight overlap / span.
@@ -35,9 +35,7 @@ def graph_reads(gene_ids, reads_dict, t=0.3):
 
     Returns
     -------
-    NetworkX graph
-        Weighted graph representation of all reads
-
+    graph : NetworkX graph
     """
     graph = nx.Graph()
     graph.add_nodes_from(gene_ids)
@@ -75,12 +73,10 @@ def graph_reads(gene_ids, reads_dict, t=0.3):
                 else:
                     check_inds = (inds_2[3] >= inds_1[2])
                 if check_inds:
-                    overlap_l, overlap_r, overlap_g, \
-                    span_l, span_r, span_g = sf.get_overlaps(inds_1, inds_2)
-                    if (overlap_l/span_l > t) and (overlap_r/span_r > t):
+                    ratio_l, ratio_r = sf.get_overlap_ratios(inds_1, inds_2)
+                    if (ratio_l > t) and (ratio_r > t):
                         graph.add_edge(
-                            id_1, id_2, weight=
-                            (overlap_l/span_l + overlap_r/span_r)
+                            id_1, id_2, weight=(ratio_l + ratio_r)
                         )
                 else:
                     loop_flag = 0
@@ -89,7 +85,7 @@ def graph_reads(gene_ids, reads_dict, t=0.3):
 
 def cluster_graph(graph, dg_ind):
     """
-    Perform spectral clustering on the weighted graph.
+    Function that performs spectral clustering on the weighted graph
 
     Parameters
     ----------
@@ -100,9 +96,7 @@ def cluster_graph(graph, dg_ind):
 
     Returns
     -------
-    dict, int
-        {read_id: DG}, DG
-
+    kmeans_dict, dg_ind : dict, int
     """
     kmeans_dict = {}
     subgraphs = list(nx.connected_component_subgraphs(graph))

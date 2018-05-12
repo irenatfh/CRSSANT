@@ -48,42 +48,35 @@ def process_cigar(cigar_str):
 
 
 ################################################################################
-def get_overlaps(read_1_inds, read_2_inds):
+def get_overlap_ratios(inds_1, inds_2):
     """
-    Calculate the overlaps between two reads and the distance spanned by them.
-    
-    The reads are each assumed to comprise two arms, a left and a right arm.
+    Function to calculate the overlap ratio between two reads
 
     Parameters
     ----------
-    read_1_inds : np array
-        np array containing information of read.
+    inds_1 : np array
+        np array containing read indices
         [read left start, read left stop, read right start, read right stop]
-    read_2_inds : np array
-        np array containing information of read.
+    inds_2 : np array
+        np array containing read indices
         [read left start, read left stop, read right start, read right stop]
 
     Returns
     -------
-    int, int, int, int, int, int
-        overlap of left arms, overlap of right arms, overlap of the gaps,
-        span of the left arm, span of the right arm, span of the gaps
+    float, float
 
     """
-    overlap_l = min(read_1_inds[1], read_2_inds[1]) - \
-                max(read_1_inds[0], read_2_inds[0]) + 1
-    overlap_r = min(read_1_inds[3], read_2_inds[3]) - \
-                max(read_1_inds[2], read_2_inds[2]) + 1
-    overlap_g = min(read_1_inds[2], read_2_inds[2]) - \
-                max(read_1_inds[1], read_2_inds[1]) + 1
-    span_l = max(read_1_inds[1], read_2_inds[1]) - \
-             min(read_1_inds[0], read_2_inds[0]) + 1
-    span_r = max(read_1_inds[3], read_2_inds[3]) - \
-             min(read_1_inds[2], read_2_inds[2]) + 1
-    span_g = max(read_1_inds[2], read_2_inds[2]) - \
-             min(read_1_inds[1], read_2_inds[1]) + 1
-    
-    return overlap_l, overlap_r, overlap_g, span_l, span_r, span_g
+    overlap_l = min(inds_1[1], inds_2[1]) - \
+                max(inds_1[0], inds_2[0]) + 1
+    overlap_r = min(inds_1[3], inds_2[3]) - \
+                max(inds_1[2], inds_2[2]) + 1
+    span_l = max(inds_1[1], inds_2[1]) - \
+             min(inds_1[0], inds_2[0]) + 1
+    span_r = max(inds_1[3], inds_2[3]) - \
+             min(inds_1[2], inds_2[2]) + 1
+    ratio_l = overlap_l / span_l
+    ratio_r = overlap_r / span_r
+    return ratio_l, ratio_r
 
 
 ################################################################################

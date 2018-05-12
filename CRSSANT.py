@@ -98,13 +98,13 @@ def main():
     
 
     # Analyze reads
-    start_time_all = time.time()
+    time_start_all = time.time()
     with open(files.log, 'w') as log:
         dg_ind = 0
         ng_ind = 0
         for region in analysis_dict:
             for gene in analysis_dict[region]:
-                start_time = time.time()
+                time_start_gene = time.time()
                 gene_ids = [
                     read_id for (read_id, read_info) in reads_dict.items() 
                     if (read_info[4] == region) & (read_info[5] == gene) 
@@ -120,9 +120,6 @@ def main():
                         inds_samp = np.random.choice(
                             len(gene_ids), max_reads, replace=False
                         )
-                        inds_unsamp = np.setdiff1d(
-                            range(len(gene_ids)), inds_samp
-                        )  
                         graph = gp.graph_reads(
                             [gene_ids[ind] for ind in inds_samp], 
                             reads_dict, t=min_overlap
@@ -132,8 +129,21 @@ def main():
                             gene_ids, reads_dict, t=min_overlap
                         )
                     reads_dg_dict, dg_ind = gp.cluster_graph(graph, dg_ind)
-
-                    
+                    log.write(time.asctime() + ' Performing DG analysis\n')
+                    time_dg_gene = time.time()
+                    dg_reads_dict = da.get_preliminary_dgs(
+                        reads_dict, reads_dg_dict
+                    )
+                    if len(gene_ids) > max_reads:
+                        inds_unsamp = np.setdiff1d(
+                            range(len(gene_ids)), inds_samp
+                        )
+                        dg_reads_dict, dg_index = da.adjust_dgs(
+                            dg_reads_dict, [
+                                gene_ids[ind] for ind in inds_unsamp
+                            ], 
+                            reads_dict, dg_ind, t=min_overlap
+                        )
     
 if __name__ == '__main__':
     main()
