@@ -42,7 +42,7 @@ def get_preliminary_dgs(reads_dict, reads_dg_dict):
     return dg_reads_dict
 
 
-def adjust_dgs(dg_reads_dict, reads_ids, reads_dict, dg_ind, t=0.3):
+def add_reads_to_dg(dg_reads_dict, reads_ids, reads_dict, dg_ind, t=0.3):
     """
     Function to adjust duplex groups
 
@@ -122,6 +122,7 @@ def filter_dgs(dg_reads_dict):
             filtered_dict[dg] = dg_reads
     return filtered_dict
 
+
 def create_dg_dict(dg_reads_dict, reads_dict, ng_ind):
     """
     Function that creates the DG dictionary
@@ -146,9 +147,12 @@ def create_dg_dict(dg_reads_dict, reads_dict, ng_ind):
     -------
     dg_dict : dict
     """
-    all_reads = list(itertools.chain.from_iterable(dg_reads_dict.values()))
+    gene_reads = list(itertools.chain.from_iterable(dg_reads_dict.values()))
     dg_dict = {}
+    ng_dict = {}
     for (dg, dg_reads) in dg_reads_dict.items():
+        dg_min = min([reads_dict[i][0] for i in dg_reads])
+        dg_max = max([reads_dict[i][3] for i in dg_reads])
         dg_inds = [int(i) for i in 
                    np.median(
                        np.array(
@@ -156,75 +160,44 @@ def create_dg_dict(dg_reads_dict, reads_dict, ng_ind):
                        ), axis=0
                    )
                   ]
-        num_reads_dg = len(dg_reads)
-        num_reads_l = 0
-        num_reads_r = 0
-        for read_id in all_reads:
+        overlapping_l = 0
+        overlapping_r = 0
+        # Calculate coverage
+        for read_id in gene_reads:
             read_inds = reads_dict[read_id][0:4]
-            overlaps = sf.get_overlap_ratios(dg_inds, read_inds)
-            overlap_l = overlaps[0]
-            overlap_r = overlaps[1]
-            if overlap_l > 0:
-                num_reads_l += 1
-            if overlap_r > 0:
-                num_reads_r += 1
-        cov = num_reads_dg / np.sqrt(num_reads_l * num_reads_r)
-        dg_dict[dg] = {'coverage': cov}
-    return dg_dict, ng_ind
-###############################################################################
-
-
-def add_ngs_to_dgs(dg_dict, dg_reads_dict, reads_dict, ng_index):
-    """
-    Add non-overlapping groups (NGs) to DG dict.
-
-    Parameters
-    ----------
-    dg_dict : dict
-        DG dictionary {DG:{DG atttributes}}
-    dg_reads_dict : dict
-        Dictionary of reads and their spectral clustering DG assignments
-    reads_dict : dict
-        Dictionary of reads and reads information 
-
-    Returns
-    -------
-    dict
-        dg_dict updated with NG attribute
-
-    """
-    ng_dict = {}
-    for dg in dg_dict.keys():
-        dg_reads_list = dg_reads_dict[dg]
-        dg_start = min(np.array([reads_dict[i][0] for i in dg_reads_list]))
-        dg_stop = max(np.array([reads_dict[i][3] for i in dg_reads_list]))
+            ratio_l, ratio_r = sf.get_overlap_ratios(dg_inds, read_inds)
+            if ratio_l > 0:
+                overlapping_l += 1
+            if ratio_r > 0:
+                overlapping_r += 1
+        cov = len(dg_reads) / np.sqrt(overlapping_l * overlapping_r)
+        # Assign NG
         if len(ng_dict) == 0:
-            ng_dict[ng_index] = [dg]
-            dg_dict[dg] = {**dg_dict[dg], **{'NG': ng_index}}
-            ng_index += 1
+            ng_dict[ng_ind] = [dg]
+            dg_ng = ng_ind
+            ng_ind += 1
         else:
-            ng_flag = 0
+            ng_assigned = 0
             for (ng, ng_dgs) in ng_dict.items():
-                overlaps_arr = np.zeros(len(ng_dgs))
-                for (i, dg_other) in enumerate(ng_dgs):
-                    dg_other_start = min(np.array(
-                        [reads_dict[i][0] for i in dg_reads_dict[dg_other]]))
-                    dg_other_stop = max(np.array(
-                        [reads_dict[i][3] for i in dg_reads_dict[dg_other]]))
-                    overlap = min(dg_stop, dg_other_stop) - max(dg_start, 
-                                                                dg_other_start)
-                    if overlap >= 0:
-                        overlaps_arr[i] = 1
-                if sum(overlaps_arr) == 0:
-                    ng_dgs.append(dg)
-                    dg_dict[dg] = {**dg_dict[dg], **{'NG': ng}}
-                    ng_flag += 1
+                ng_overlaps = np.zeros(len(ng_dgs))
+                for (i, ng_dg) in enumerate(ng_dgs):
+                    ng_dg_reads = dg_reads_dict[ng_dg]
+                    ng_dg_min = min([reads_dict[i][0] for i in ng_dg_reads])
+                    ng_dg_max = max([reads_dict[i][3] for i in ng_dg_reads])
+                    overlap = min(dg_max, ng_dg_max) - max(dg_min, ng_dg_min)
+                    if overlap > 0:
+                        ng_overlaps[i] = 1
+                if sum(ng_overlaps) == 0:
+                    ng_dict[ng].append(dg)
+                    dg_ng = ng
+                    ng_assigned += 1
                     break
-            if ng_flag == 0:
-                ng_dict[ng_index] = [dg]
-                dg_dict[dg] = {**dg_dict[dg], **{'NG': ng_index}}
-                ng_index += 1
-                
-    return dg_dict, ng_index
-        
-            
+            if ng_assigned == 0:
+                ng_dict[ng_ind] = [dg]
+                dg_ng = ng_ind
+                ng_ind += 1
+        dg_dict[dg] = {
+            'arm_indices' : dg_inds, 'coverage': cov, 
+            'num_reads' : len(dg_reads), 'NG' : dg_ng
+        }
+    return dg_dict, ng_ind

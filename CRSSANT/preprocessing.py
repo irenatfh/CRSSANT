@@ -93,17 +93,17 @@ def parse_reads(reads_file, ref_dict):
                         for (gene, inds) in ref_dict[region]['genes'].items():
                             if inds[0] <= l_pos_start <= inds[1]:
                                 l_gene = gene
-                            if inds[0] <= l_pos_start <= inds[1]:
+                            if inds[0] <= r_pos_start <= inds[1]:
                                 r_gene = gene
-                            try:
-                                l_gene, r_gene
-                            except NameError:
-                                pass
-                            else:
-                                reads_dict[read_id] = [
-                                    l_pos_start, l_pos_stop, r_pos_start, 
-                                    r_pos_stop, region, l_gene, r_gene
-                                ]
+                        try:
+                            l_gene, r_gene
+                        except NameError:
+                            pass
+                        else:
+                            reads_dict[read_id] = [
+                                l_pos_start, l_pos_stop, r_pos_start, 
+                                r_pos_stop, region, l_gene, r_gene
+                            ]
     return reads_dict
 
 
@@ -302,7 +302,6 @@ def get_gs_dict(gs_bp_bed, ref_dict, region):
     return gs_structs_dict
 
 
-################################################################################
 def get_dg_dict(dg_info_bed, ref_dict, ref_seq):
     """
     From a duplex group (DG) info BED file, create a dictionary of DG

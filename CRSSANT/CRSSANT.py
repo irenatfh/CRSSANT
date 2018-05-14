@@ -100,9 +100,9 @@ def main():
     # Analyze reads to obtain DGs
     with open(files.log, 'w') as log:
         dg_ind = 0
-        ng_ind = 0
         for region in analysis_dict:
             for gene in analysis_dict[region]:
+                ng_ind = 0
                 gene_ids = [
                     read_id for (read_id, read_info) in reads_dict.items() 
                     if (read_info[4] == region) & (read_info[5] == gene) 
@@ -129,14 +129,20 @@ def main():
                         inds_unsamp = np.setdiff1d(
                             range(len(gene_ids)), inds_samp
                         )
-                        dg_reads_dict, dg_index = da.adjust_dgs(
+                        dg_reads_dict, dg_index = da.add_reads_to_dg(
                             dg_reads_dict, [
                                 gene_ids[ind] for ind in inds_unsamp
                             ], 
                             reads_dict, dg_ind, t=min_overlap
                         )
                     dg_filtered_dict = da.filter_dgs(dg_reads_dict)
-                    dg_dict, ng_ind = da.create_dg_dict(dg_filtered_dict, reads_dict, ng_ind)
+                    dg_dict, ng_ind = da.create_dg_dict(
+                        dg_filtered_dict, reads_dict, ng_ind
+                    )
+                    op.write_info_bed(files.out_info, dg_dict, region)
+                    op.write_dg_ng_sam(
+                        args.reads, files.out_sam, dg_reads_dict, dg_dict
+                    )
     
 if __name__ == '__main__':
     main()

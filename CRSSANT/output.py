@@ -1,7 +1,18 @@
+# This file is part of CRSSANT:
+# Computational RNA Secondary Structure Analysis using Network Techniques
+#
+###############################################################################
+"""
+This module is a collection of functions that perform DG analysis tasks
+"""
+
+# Author: Irena Fischer-Hwang
+# Contact: ihwang@stanford.edu
+
+
 import numpy as np
 
 
-################################################################################
 def write_info_bed(bed_file, dg_dict, region):
     with open(bed_file, 'a') as f_write:
         for (dg, dg_info) in dg_dict.items():
@@ -39,7 +50,7 @@ def write_dg_ng_sam(reads_file, rna_file, dg_reads_dict, dg_dict):
                         break          
     return
 
-
+###############################################################################
 def write_bp_bed(bed_file, dg_dict, region, rna):
     with open(bed_file, 'a') as f_write:
         f_write.write('track graphType=arc itemRgb=on\n')
