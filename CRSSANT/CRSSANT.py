@@ -17,8 +17,8 @@ import argparse
 import time
 import numpy as np
 from itertools import chain
-from analysis_pipe import subfunctions as sf, preprocessing as pp, \
-graphing as gp, dg_analysis as da, output as op
+import preprocessing as pp, graphing as gp, dg_analysis as da, \
+structure_discovery as sd, output as op
 
 
 # Global variables
@@ -35,7 +35,7 @@ class ReadsFiles(object):
         self.out_info = out + self.name + '_info.bed'
         self.out_bp = out + self.name + '_bp.bed'
         self.out_aux = out + self.name + '.aux'
-        self.log = out + self.name + '_CRSSANT.log'
+        self.log = out + self.name + '.log'
         
     
 def parse_args():
@@ -97,25 +97,18 @@ def main():
     reads_dict = pp.parse_reads(args.reads, ref_dict)
     
 
-    # Analyze reads
-    time_start_all = time.time()
+    # Analyze reads to obtain DGs
     with open(files.log, 'w') as log:
         dg_ind = 0
         ng_ind = 0
         for region in analysis_dict:
             for gene in analysis_dict[region]:
-                time_start_gene = time.time()
                 gene_ids = [
                     read_id for (read_id, read_info) in reads_dict.items() 
                     if (read_info[4] == region) & (read_info[5] == gene) 
                     & (read_info[6] == gene)
                 ]
-                log.write(
-                    'Analyzing %s reads spanning RNAs %s\n' 
-                    %(len(gene_ids), gene)
-                )
                 if len(gene_ids) > 1:
-                    log.write(time.asctime() + ' Graphing reads\n')
                     if len(gene_ids) > max_reads:
                         inds_samp = np.random.choice(
                             len(gene_ids), max_reads, replace=False
@@ -129,8 +122,6 @@ def main():
                             gene_ids, reads_dict, t=min_overlap
                         )
                     reads_dg_dict, dg_ind = gp.cluster_graph(graph, dg_ind)
-                    log.write(time.asctime() + ' Performing DG analysis\n')
-                    time_dg_gene = time.time()
                     dg_reads_dict = da.get_preliminary_dgs(
                         reads_dict, reads_dg_dict
                     )
@@ -144,6 +135,8 @@ def main():
                             ], 
                             reads_dict, dg_ind, t=min_overlap
                         )
+                    dg_filtered_dict = da.filter_dgs(dg_reads_dict)
+                    dg_dict, ng_ind = da.create_dg_dict(dg_filtered_dict, reads_dict, ng_ind)
     
 if __name__ == '__main__':
     main()

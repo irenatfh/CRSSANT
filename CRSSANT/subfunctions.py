@@ -3,12 +3,13 @@ import re
 import sys
 sys.path.append('/home/ihwang/software/ViennaRNA-2.4.3/interfaces/Python3')
 import RNA
+import ushuffle
 
 
 ################################################################################
 def process_cigar(cigar_str):
     """
-    Process the CIGAR string accompanying a read.
+    Function to process CIGAR string in sequencing reads
 
     Parameters
     ----------
@@ -17,9 +18,7 @@ def process_cigar(cigar_str):
         
     Returns
     -------
-    list, list
-        List of operations, list of lengths associated with the operations
-
+    ops, lens : list, list
     """
     # Parse the cigar string into operations (ops) and operation lengths (lens)
     ops_raw = re.findall('\D+', cigar_str)
@@ -47,7 +46,6 @@ def process_cigar(cigar_str):
     return ops, lens
 
 
-################################################################################
 def get_overlap_ratios(inds_1, inds_2):
     """
     Function to calculate the overlap ratio between two reads
@@ -184,3 +182,56 @@ def count_crosslinks(seq, fc):
                     uc_cl_counter += 1
                     
     return np.array([uu_cl_counter, uc_cl_counter, len(l_bp_inds)], dtype=np.int)
+
+
+################################################################################
+def generate_shifted_inds(gene_inds, struct_len, struct_inds, n_shifts):
+    gene_range = range(gene_inds[0], gene_inds[1] + 1 - struct_len)
+    valid_inds = list(set(gene_range).difference(struct_inds[0:1]))
+    inds_shift = np.random.choice(valid_inds, min(len(valid_inds), n_shifts),
+                                  replace=False)
+    return inds_shift
+
+################################################################################
+def shift_dg(dg_inds, inds_shift, ref_seq, ARM_FLAG=0):
+    mfes_shifted = []
+    for ind_shift in inds_shift:
+        inds_shifted = np.copy(dg_inds)
+        if (ARM_FLAG) == 0 or (ARM_FLAG == 1):
+            shift = ind_shift - dg_inds[0]
+            inds_shifted[:2] += shift
+            if ARM_FLAG == 0:
+                inds_shifted[2:] += shift
+        else:
+            shift = ind_shift - dg_inds[2]
+            inds_shifted[2:] += shift
+        inds_shifted_folded, [fc, mfe] = calculate_stem_mfe(inds_shifted,
+                                                            ref_seq,
+                                                            TRUNC_FLAG=0)
+        mfes_shifted.append(mfe)
+    return mfes_shifted
+
+
+################################################################################
+def shuffle_dg(l_arm, r_arm, n_shuffles):
+    cut_point = len(l_arm) + 1
+    shuffled_seqs = set()
+    shuffled_mfes = []
+    while len(shuffled_seqs) < n_shuffles:
+        seq = l_arm + r_arm
+        if seq not in shuffled_seqs:
+            shuffled_seqs.add(seq)
+            [shuffled_fc, shuffled_mfe] = RNA.fold_compound(
+                l_arm + '&' + r_arm).mfe_dimer()
+            l_symbols = [i for i in shuffled_fc[ : cut_point] if i != '.']
+            r_symbols = [i for i in shuffled_fc[cut_point : ] if i != '.']
+            if (len(l_symbols) < 2 or len(r_symbols) < 2) or \
+            (set(l_symbols) != set('(') or set(r_symbols) != set(')')):
+                shuffled_fc = '.' * len(seq)
+                shuffled_mfe = 0.0
+            shuffled_mfes.append(shuffled_mfe)
+        ushuffle.shuffle1(l_arm, len(l_arm), 2)
+        l_arm = ushuffle.shuffle2()
+        ushuffle.shuffle1(r_arm, len(r_arm), 2)
+        r_arm = ushuffle.shuffle2()
+    return shuffled_mfes
