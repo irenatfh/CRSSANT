@@ -24,7 +24,8 @@ structure_discovery as sd, output as op
 # Global variables
 max_reads = 2000
 min_overlap = 0.3
-n_test = 100
+tests = 100
+min_rank = 0.75
 
 
 class ReadsFiles(object):
@@ -105,6 +106,7 @@ def main():
         for region in analysis_dict:
             region_seq = ref_dict[region]['sequence']
             for gene in analysis_dict[region]:
+                gene_inds = ref_dict[region]['genes'][gene]
                 ng_ind = 0
                 gene_ids = [
                     read_id for (read_id, read_info) in reads_dict.items() 
@@ -151,9 +153,16 @@ def main():
                         args.reads, files.out_sam, dg_reads_dict, dg_dict
                     )
     
+    
             # Analyze DGs to discover new secondary structures
             struct_dict = sd.get_struct_dict(dg_dict, region_seq)
-            struct_results = sd.test_structs(struct_dict, region_seq)
+            test_dict = sd.test_structs(
+                struct_dict, region_seq, gene_inds, tests
+            )
+            struct_list = sd.filter_structs(test_dict, min_rank)
+            print(list(dg_dict.keys()), len(dg_dict.keys()))
+            print(struct_list, len(struct_list))
     
 if __name__ == '__main__':
     main()
+###############################################################################

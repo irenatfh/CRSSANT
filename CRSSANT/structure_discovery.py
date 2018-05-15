@@ -12,6 +12,7 @@ This module is a collection of functions that perform DG analysis tasks
 
 import numpy as np
 import sys
+import bisect
 import subfunctions as sf
 
 
@@ -42,52 +43,72 @@ def get_struct_dict(dg_dict, ref_seq):
     return struct_dict
 
 
-def test_structs(struct_dict, ref_seq):
+def test_structs(struct_dict, ref_seq, gene_inds, n):
     """
-    Function...
+    Function to test structures using shifts and shuffles
+    
+    Shifts are random along the gene reference sequence, but shuffles
+    are those that maintain dinucleotide content.
 
     Parameters
     ----------
-    P1 : type
-        Descr.     
+    struct_dict : dict
+        Dictionary of structurally-valid DGs
+    ref_seq : str
+        Reference sequence
+    gene_inds : list
+        Gene index list
+    n : int
+        Number of tests to perform
 
     Returns
     -------
-    tests_dict : dict
+    test_dict : dict
     """
-    tests_dict = {}
+    test_dict = {}
     for (struct, struct_info) in struct_dict.items():
-        tests_dict[struct] = {}
+        test_dict[struct] = {}
         struct_inds = struct_info['struct_inds']
-        seq_l = region_seq[struct_inds[0] : struct_inds[1] + 1]
-        seq_r = region_seq[struct_inds[2] : struct_inds[3] + 1]
-        mfes_shuffled = shuffle_dg(seq_l, seq_r, n)
+        struct_mfe = struct_info['mfe']
+        
+        
+        # Shuffle arm contents
+        seq_l = ref_seq[struct_inds[0] : struct_inds[1] + 1]
+        seq_r = ref_seq[struct_inds[2] : struct_inds[3] + 1]
+        mfes_shuffled = sf.shuffle_stem(seq_l, seq_r, n)
+        ranking = bisect.bisect_right(
+            [abs(i) for i in mfes_shuffled], abs(struct_mfe)
+        )
+        test_dict[struct]['shuffles'] = ranking / len(mfes_shuffled)
 
         
-def shuffle_dg(seq_l, seq_r, n):
+        # Shift arms
+        mfes_shifted = sf.shift_stem(struct_inds, ref_seq, gene_inds, n)
+        ranking = bisect.bisect_right(
+            [abs(i) for i in mfes_shifted], abs(struct_mfe)
+        )
+        test_dict[struct]['shifts'] = ranking / len(mfes_shifted)
+    return test_dict
+
+
+def filter_structs(test_dict, t):
     """
-    Function...
+    Function that checks which structures exceed a validity threshold
 
     Parameters
     ----------
-    P1 : type
-        Descr.     
+    test_dict : dict
+        Dictionary of structure test results
+    t : float
+        Validity threshold
 
     Returns
     -------
-    tests_dict : dict
+    struct_list : dict
     """
-    shuffled_seqs = set()
-    shuffled_mfes = []
-    while len(shuffled_seqs) < n:
-        seq = seq_l + seq_r
-        if seq not in shuffled_seqs:
-            shuffled_seqs.add(seq)
-            [shuffled_fc, shuffled_mfe] = sf.fold_stem(seq_l, seq_r)
-            shuffled_mfes.append(shuffled_mfe)
-        ushuffle.shuffle1(seq_l, len(seq_l), 2)
-        seq_l = ushuffle.shuffle2()
-        ushuffle.shuffle1(seq_r, len(seq_r), 2)
-        seq_r = ushuffle.shuffle2()
-    return shuffled_mfes
-###############################################################################
+    struct_list = []
+    for (struct, tests) in test_dict.items():
+        if (tests['shuffles'] > t) and (tests['shifts'] > t):
+            struct_list.append(struct)
+    return struct_list
+        

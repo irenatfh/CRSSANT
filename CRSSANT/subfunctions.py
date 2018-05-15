@@ -1,7 +1,6 @@
 import numpy as np
 import re
-import sys
-sys.path.append('/home/ihwang/software/ViennaRNA-2.4.3/interfaces/Python3')
+import math
 import RNA
 import ushuffle
 
@@ -42,7 +41,6 @@ def process_cigar(cigar_str):
     if ops[-1] != 'S':
         lens = lens + [0]
         ops = ops + ['S']
-    
     return ops, lens
 
 
@@ -150,9 +148,9 @@ def fold_stem(seq_l, seq_r):
     Parameters
     ----------
     seq_l : np array
-        Stem arm indices
+        Stem left arm sequence
     seq_r : str
-        Reference sequence
+        Stem right arm sequence
 
     Returns
     -------
@@ -167,6 +165,75 @@ def fold_stem(seq_l, seq_r):
         fc = '.' * len(fc)
         mfe = 0.0
     return fc, mfe
+
+
+def shuffle_stem(seq_l, seq_r, n):
+    """
+    Function to shuffle a stem up to n times
+
+    Parameters
+    ----------
+    seq_l : np array
+        Stem left arm sequence
+    seq_r : str
+        Stem right arm sequence
+    n : int
+        Number of shifts
+
+    Returns
+    -------
+    mfes_shuffled : dict
+    """
+    seqs_shuffled = set()
+    mfes_shuffled = []
+    loop = 0
+    while (len(seqs_shuffled) < n) and (loop < math.factorial(len(seq_l))**2):
+        seq = seq_l + seq_r
+        if seq not in seqs_shuffled:
+            seqs_shuffled.add(seq)
+            fc, mfe = fold_stem(seq_l, seq_r)
+            mfes_shuffled.append(mfe)
+        seq_l = ushuffle.shuffle(seq_l, len(seq_l), 2)
+        seq_r = ushuffle.shuffle(seq_r, len(seq_r), 2)
+        loop += 1
+    mfes_shuffled = sorted(mfes_shuffled)[::-1]  # sort from worst to best MFE
+    return mfes_shuffled
+
+
+def shift_stem(stem_inds, ref_seq, gene_inds, n):
+    """
+    Function to shift  a stem up to n times
+
+    Parameters
+    ----------
+    stem_inds : list
+        Stem index list
+    ref_seq : str
+        Reference sequence
+    gene_inds : list
+        Gene index list
+    n : int
+        Number of shifts
+
+    Returns
+    -------
+    mfes_shifted : dict
+    """
+    stem_len = stem_inds[3] - stem_inds[0] + 1
+    gene_range = range(gene_inds[0], gene_inds[1] + 1 - stem_len)
+    valid_inds = list(set(gene_range).difference([stem_inds[0]]))
+    inds_shift = np.random.choice(
+        valid_inds, min(len(valid_inds), n), replace=False)
+    mfes_shifted = []
+    for ind_shift in inds_shift:
+        inds_shifted = np.copy(stem_inds)
+        shift = ind_shift - stem_inds[0]
+        inds_shifted += shift
+        inds, fc, mfe = fold_optimize_stem(inds_shifted, ref_seq)
+        mfes_shifted.append(mfe)
+    mfes_shifted = sorted(mfes_shifted)[::-1]  # sort from worst to best MFE
+    return mfes_shifted
+
 
 ################################################################################
 def count_crosslinks(seq, fc):
@@ -210,31 +277,3 @@ def count_crosslinks(seq, fc):
                     uc_cl_counter += 1
                     
     return np.array([uu_cl_counter, uc_cl_counter, len(l_bp_inds)], dtype=np.int)
-
-
-################################################################################
-def generate_shifted_inds(gene_inds, struct_len, struct_inds, n_shifts):
-    gene_range = range(gene_inds[0], gene_inds[1] + 1 - struct_len)
-    valid_inds = list(set(gene_range).difference(struct_inds[0:1]))
-    inds_shift = np.random.choice(valid_inds, min(len(valid_inds), n_shifts),
-                                  replace=False)
-    return inds_shift
-
-################################################################################
-def shift_dg(dg_inds, inds_shift, ref_seq, ARM_FLAG=0):
-    mfes_shifted = []
-    for ind_shift in inds_shift:
-        inds_shifted = np.copy(dg_inds)
-        if (ARM_FLAG) == 0 or (ARM_FLAG == 1):
-            shift = ind_shift - dg_inds[0]
-            inds_shifted[:2] += shift
-            if ARM_FLAG == 0:
-                inds_shifted[2:] += shift
-        else:
-            shift = ind_shift - dg_inds[2]
-            inds_shifted[2:] += shift
-        inds_shifted_folded, [fc, mfe] = calculate_stem_mfe(inds_shifted,
-                                                            ref_seq,
-                                                            TRUNC_FLAG=0)
-        mfes_shifted.append(mfe)
-    return mfes_shifted
