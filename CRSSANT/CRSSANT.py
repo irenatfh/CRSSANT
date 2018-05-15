@@ -24,6 +24,7 @@ structure_discovery as sd, output as op
 # Global variables
 max_reads = 2000
 min_overlap = 0.3
+n_test = 100
 
 
 class ReadsFiles(object):
@@ -99,8 +100,10 @@ def main():
 
     # Analyze reads to obtain DGs
     with open(files.log, 'w') as log:
+        log.write('Analyzing duplex groups (DGs)\n')
         dg_ind = 0
         for region in analysis_dict:
+            region_seq = ref_dict[region]['sequence']
             for gene in analysis_dict[region]:
                 ng_ind = 0
                 gene_ids = [
@@ -108,6 +111,10 @@ def main():
                     if (read_info[4] == region) & (read_info[5] == gene) 
                     & (read_info[6] == gene)
                 ]
+                log.write(
+                    'Analyzing %s reads spanning gene %s\n' 
+                    %(len(gene_ids), gene)
+                )
                 if len(gene_ids) > 1:
                     if len(gene_ids) > max_reads:
                         inds_samp = np.random.choice(
@@ -144,6 +151,15 @@ def main():
                         args.reads, files.out_sam, dg_reads_dict, dg_dict
                     )
     
+            # Analyze DGs to discover new secondary structures
+            struct_dict = sd.get_struct_dict(dg_dict, region_seq)
+            struct_tests = {}
+            for struct in struct_dict:
+                struct_tests[struct] = {}
+                struct_inds = struct_dict[struct]['struct_inds']
+                l_arm = region_seq[struct_inds[0] : struct_inds[1] + 1]
+                r_arm = region_seq[struct_inds[2] : struct_inds[3] + 1]
+                mfes_shuffled = sd.shuffle_dg(l_arm, r_arm, n_test)
+    
 if __name__ == '__main__':
     main()
-###############################################################################

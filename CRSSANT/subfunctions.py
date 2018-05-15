@@ -77,67 +77,70 @@ def get_overlap_ratios(inds_1, inds_2):
     return ratio_l, ratio_r
 
 
-################################################################################
-def get_intersection(read_1_inds, read_2_inds):
+def fold_stem(stem_inds, ref_seq, TRUNC_FLAG=1):
     """
-    Calculate the intersections between two reads, defined as the total number
-    of overlapping bases over any of the arms (left arm and left arm, left arm 
-    and right arm, etc.)
+    Function to fold an RNA stem using RNAfold
     
-    The reads are each assumed to comprise two arms, a left and a right arm.
+    Results in the minimum free energy structure and energy of the folded stem. 
+    Truncation is attempted if desired, as indicated by the TRUNC_FLAG.
 
     Parameters
     ----------
-    read_1_inds : np array
-        np array containing information of read.
-        [read left start, read left stop, read right start, read right stop]
-    read_2_inds : np array
-        np array containing information of read.
-        [read left start, read left stop, read right start, read right stop]
+    stem_inds : np array
+        Stem arm indices
+    ref_seq : str
+        Reference sequence
+    TRUNC_FLAG : int
 
     Returns
     -------
-    int
-        overlap of left arms, overlap of right arms, overlap of the gaps,
-        span of the left arm, span of the right arm, span of the gaps
-
+    folded_stem_inds, fc, mfe : list, str, float
     """
-    range_1 = np.concatenate((np.arange(read_1_inds[0], read_1_inds[1] + 1),
-                              np.arange(read_1_inds[2], read_1_inds[3] + 1)), 
-                             axis=0)
-    range_2 = np.concatenate((np.arange(read_2_inds[0], read_2_inds[1] + 1),
-                              np.arange(read_2_inds[2], read_2_inds[3] + 1)), 
-                             axis=0)
-    intersection = set(range_1).intersection(set(range_2))
-    
-    return len(intersection)
-
-
-################################################################################
-def read_inds_to_vec(read_inds, gene_length, gene_start):
-    """
-    Converts a read index array into a read vector
-
-    Parameters
-    ----------
-    read_inds : np array
-        np array containing information of read.
-        [read left start, read left stop, read right start, read right stop]
-
-    Returns
-    -------
-    np array
-        vector of length gene_length with read arm positions indicated by 1s 
-
-    """
-    read_vec = np.zeros(gene_length)
-    l_arm_range = np.arange(read_inds[0], read_inds[1] + 1) - (gene_start - 1)
-    r_arm_range = np.arange(read_inds[2], read_inds[3] + 1) - (gene_start - 1)
-    total_range = np.concatenate((l_arm_range, r_arm_range), axis=0)
-    for i in total_range:
-        read_vec[i] = 1
-    
-    return read_vec
+    folded_stem_inds = np.copy(stem_inds)
+    l_arm = ref_seq[stem_inds[0] : stem_inds[1] + 1]
+    r_arm = ref_seq[stem_inds[2] : stem_inds[3] + 1]
+    cut_point = len(l_arm)
+    seq = l_arm + r_arm
+    # Attempt folding
+    res = RNA.fold_compound(l_arm + '&' + r_arm)
+    [fc, mfe] = res.mfe_dimer()
+    l_symbols = [i for i in fc[ : cut_point] if i != '.']
+    r_symbols = [i for i in fc[cut_point : ] if i != '.']
+    # Check for fatal helix folding results
+    if (len(l_symbols) < 2 or len(r_symbols) < 2) or \
+       (set(l_symbols) != set('(') or set(r_symbols) != set(')')):
+        folded_stem_inds = np.zeros(4)
+        fc = '.' * len(seq)
+        mfe = 0.0
+    else:
+        if TRUNC_FLAG == 1:
+            # Check for folding results that might be fixable by truncation
+            if set(fc[:cut_point]).issubset(set('.(')) is False:
+                off_inds = [i for i in range(cut_point) if fc[i] == ')']
+                l_arm = l_arm[off_inds[-1] + 1 : ]
+                folded_stem_inds[0] += off_inds[-1] + 1
+            if set(fc[cut_point:]).issubset(set('.)')) is False:
+                off_inds = [i for i in range(len(r_arm)) if 
+                            fc[cut_point : ][i] == '(']
+                r_arm = r_arm[ : off_inds[0]]
+                folded_stem_inds[3] = folded_stem_inds[2] + off_inds[0] - 1
+            # Re-attempt helix folding/fold helix again if no truncation
+            cut_point = len(l_arm)
+            seq = l_arm + r_arm
+            res = RNA.fold_compound(l_arm + '&' + r_arm)
+            [fc, mfe] = res.mfe_dimer()
+            # Check if truncation was successful
+            l_symbols = [i for i in fc[ : cut_point] if i != '.']
+            r_symbols = [i for i in fc[cut_point :] if i != '.']
+            # If truncation was unsuccessful output null fc and mfe
+            if (len(l_symbols) < 2 or len(r_symbols) < 2) or \
+               (set(l_symbols) != set('(') or set(r_symbols) != set(')')):
+                folded_stem_inds = np.zeros(4)
+                fc = '.' * len(seq)
+                mfe = 0.0
+            else:
+                pass
+    return folded_stem_inds, fc, mfe
 
 
 ################################################################################
@@ -210,28 +213,3 @@ def shift_dg(dg_inds, inds_shift, ref_seq, ARM_FLAG=0):
                                                             TRUNC_FLAG=0)
         mfes_shifted.append(mfe)
     return mfes_shifted
-
-
-################################################################################
-def shuffle_dg(l_arm, r_arm, n_shuffles):
-    cut_point = len(l_arm) + 1
-    shuffled_seqs = set()
-    shuffled_mfes = []
-    while len(shuffled_seqs) < n_shuffles:
-        seq = l_arm + r_arm
-        if seq not in shuffled_seqs:
-            shuffled_seqs.add(seq)
-            [shuffled_fc, shuffled_mfe] = RNA.fold_compound(
-                l_arm + '&' + r_arm).mfe_dimer()
-            l_symbols = [i for i in shuffled_fc[ : cut_point] if i != '.']
-            r_symbols = [i for i in shuffled_fc[cut_point : ] if i != '.']
-            if (len(l_symbols) < 2 or len(r_symbols) < 2) or \
-            (set(l_symbols) != set('(') or set(r_symbols) != set(')')):
-                shuffled_fc = '.' * len(seq)
-                shuffled_mfe = 0.0
-            shuffled_mfes.append(shuffled_mfe)
-        ushuffle.shuffle1(l_arm, len(l_arm), 2)
-        l_arm = ushuffle.shuffle2()
-        ushuffle.shuffle1(r_arm, len(r_arm), 2)
-        r_arm = ushuffle.shuffle2()
-    return shuffled_mfes

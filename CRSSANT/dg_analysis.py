@@ -197,7 +197,7 @@ def create_dg_dict(dg_reads_dict, reads_dict, ng_ind):
                 dg_ng = ng_ind
                 ng_ind += 1
         dg_dict[dg] = {
-            'arm_indices' : dg_inds, 'coverage': cov, 
+            'arm_inds' : dg_inds, 'coverage': cov, 
             'num_reads' : len(dg_reads), 'NG' : dg_ng
         }
     return dg_dict, ng_ind

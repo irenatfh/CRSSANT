@@ -16,7 +16,7 @@ import numpy as np
 def write_info_bed(bed_file, dg_dict, region):
     with open(bed_file, 'a') as f_write:
         for (dg, dg_info) in dg_dict.items():
-            dg_inds = dg_info['arm_indices']
+            dg_inds = dg_info['arm_inds']
             coverage = dg_info['coverage']
             num_reads = dg_info['num_reads']
             left_start = dg_inds[0] + 1  # biology is 1-indexed
