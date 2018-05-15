@@ -153,13 +153,7 @@ def main():
     
             # Analyze DGs to discover new secondary structures
             struct_dict = sd.get_struct_dict(dg_dict, region_seq)
-            struct_tests = {}
-            for struct in struct_dict:
-                struct_tests[struct] = {}
-                struct_inds = struct_dict[struct]['struct_inds']
-                l_arm = region_seq[struct_inds[0] : struct_inds[1] + 1]
-                r_arm = region_seq[struct_inds[2] : struct_inds[3] + 1]
-                mfes_shuffled = sd.shuffle_dg(l_arm, r_arm, n_test)
+            struct_results = sd.test_structs(struct_dict, region_seq)
     
 if __name__ == '__main__':
     main()

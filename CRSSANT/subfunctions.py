@@ -77,12 +77,12 @@ def get_overlap_ratios(inds_1, inds_2):
     return ratio_l, ratio_r
 
 
-def fold_stem(stem_inds, ref_seq, TRUNC_FLAG=1):
+def fold_optimize_stem(stem_inds, ref_seq):
     """
-    Function to fold an RNA stem using RNAfold
+    Function to fold and optimize an RNA stem using RNAfold
     
-    Results in the minimum free energy structure and energy of the folded stem. 
-    Truncation is attempted if desired, as indicated by the TRUNC_FLAG.
+    Results in the minimum free energy structure and energy of the folded stem, 
+    and attempts folding optimization by truncating the stem, if possible.
 
     Parameters
     ----------
@@ -90,19 +90,18 @@ def fold_stem(stem_inds, ref_seq, TRUNC_FLAG=1):
         Stem arm indices
     ref_seq : str
         Reference sequence
-    TRUNC_FLAG : int
-
+        
     Returns
     -------
     folded_stem_inds, fc, mfe : list, str, float
     """
     folded_stem_inds = np.copy(stem_inds)
-    l_arm = ref_seq[stem_inds[0] : stem_inds[1] + 1]
-    r_arm = ref_seq[stem_inds[2] : stem_inds[3] + 1]
-    cut_point = len(l_arm)
-    seq = l_arm + r_arm
+    seq_l = ref_seq[stem_inds[0] : stem_inds[1] + 1]
+    seq_r = ref_seq[stem_inds[2] : stem_inds[3] + 1]
+    cut_point = len(seq_l)
+    seq = seq_l + seq_r
     # Attempt folding
-    res = RNA.fold_compound(l_arm + '&' + r_arm)
+    res = RNA.fold_compound(seq_l + '&' + seq_r)
     [fc, mfe] = res.mfe_dimer()
     l_symbols = [i for i in fc[ : cut_point] if i != '.']
     r_symbols = [i for i in fc[cut_point : ] if i != '.']
@@ -113,35 +112,61 @@ def fold_stem(stem_inds, ref_seq, TRUNC_FLAG=1):
         fc = '.' * len(seq)
         mfe = 0.0
     else:
-        if TRUNC_FLAG == 1:
-            # Check for folding results that might be fixable by truncation
-            if set(fc[:cut_point]).issubset(set('.(')) is False:
-                off_inds = [i for i in range(cut_point) if fc[i] == ')']
-                l_arm = l_arm[off_inds[-1] + 1 : ]
-                folded_stem_inds[0] += off_inds[-1] + 1
-            if set(fc[cut_point:]).issubset(set('.)')) is False:
-                off_inds = [i for i in range(len(r_arm)) if 
-                            fc[cut_point : ][i] == '(']
-                r_arm = r_arm[ : off_inds[0]]
-                folded_stem_inds[3] = folded_stem_inds[2] + off_inds[0] - 1
-            # Re-attempt helix folding/fold helix again if no truncation
-            cut_point = len(l_arm)
-            seq = l_arm + r_arm
-            res = RNA.fold_compound(l_arm + '&' + r_arm)
-            [fc, mfe] = res.mfe_dimer()
-            # Check if truncation was successful
-            l_symbols = [i for i in fc[ : cut_point] if i != '.']
-            r_symbols = [i for i in fc[cut_point :] if i != '.']
-            # If truncation was unsuccessful output null fc and mfe
-            if (len(l_symbols) < 2 or len(r_symbols) < 2) or \
-               (set(l_symbols) != set('(') or set(r_symbols) != set(')')):
-                folded_stem_inds = np.zeros(4)
-                fc = '.' * len(seq)
-                mfe = 0.0
-            else:
-                pass
+        # Check for folding results that might be fixable by truncation
+        if set(fc[:cut_point]).issubset(set('.(')) is False:
+            off_inds = [i for i in range(cut_point) if fc[i] == ')']
+            seq_l = seq_l[off_inds[-1] + 1 : ]
+            folded_stem_inds[0] += off_inds[-1] + 1
+        if set(fc[cut_point:]).issubset(set('.)')) is False:
+            off_inds = [i for i in range(len(seq_r)) if 
+                        fc[cut_point : ][i] == '(']
+            seq_r = seq_r[ : off_inds[0]]
+            folded_stem_inds[3] = folded_stem_inds[2] + off_inds[0] - 1
+        # Re-attempt helix folding/fold helix again if no truncation
+        cut_point = len(seq_l)
+        seq = seq_l + seq_r
+        res = RNA.fold_compound(seq_l + '&' + seq_r)
+        [fc, mfe] = res.mfe_dimer()
+        # Check if truncation was successful
+        l_symbols = [i for i in fc[ : cut_point] if i != '.']
+        r_symbols = [i for i in fc[cut_point :] if i != '.']
+        # If truncation was unsuccessful output null fc and mfe
+        if (len(l_symbols) < 2 or len(r_symbols) < 2) or \
+           (set(l_symbols) != set('(') or set(r_symbols) != set(')')):
+            folded_stem_inds = np.zeros(4)
+            fc = '.' * len(seq)
+            mfe = 0.0
+        else:
+            pass
     return folded_stem_inds, fc, mfe
 
+
+def fold_stem(seq_l, seq_r):
+    """
+    Function to fold an RNA stem using RNAfold
+    
+    This function simply attempts folding given left and right stem sequences.
+
+    Parameters
+    ----------
+    seq_l : np array
+        Stem arm indices
+    seq_r : str
+        Reference sequence
+
+    Returns
+    -------
+    fc, mfe : str, float
+    """
+    cut_point = len(seq_l)
+    fc, mfe = RNA.fold_compound(seq_l + '&' + seq_r).mfe_dimer()
+    fc_l = [i for i in fc[ : cut_point] if i != '.']
+    fc_r = [i for i in fc[cut_point : ] if i != '.']
+    if (len(fc_l) < 2 or len(fc_r) < 2) or \
+    (set(fc_l) != set('(') or set(fc_r) != set(')')):
+        fc = '.' * len(fc)
+        mfe = 0.0
+    return fc, mfe
 
 ################################################################################
 def count_crosslinks(seq, fc):
