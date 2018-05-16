@@ -14,7 +14,7 @@ Main script for running CRSSANT analysis and discovery pipelines
 
 import sys
 import argparse
-import time
+import datetime
 import numpy as np
 from itertools import chain
 import preprocessing as pp, graphing as gp, dg_analysis as da, \
@@ -100,11 +100,12 @@ def main():
     
 
     with open(files.log, 'w') as log:
-        log.write('Analyzing duplex groups (DGs)\n')
+        start = datetime.datetime.now()
         dg_ind = 0
         for region in analysis_dict:
             region_seq = ref_dict[region]['sequence']
             for gene in analysis_dict[region]:
+                gene_start = datetime.datetime.now()
                 gene_inds = ref_dict[region]['genes'][gene]
                 ng_ind = 0
                 gene_ids = [
@@ -172,8 +173,10 @@ def main():
                     op.write_bp(
                         files.out_bp, stem_dict, struct_list, region, gene
                     )
-                    
-                    #
+                gene_stop = datetime.datetime.now()
+                log.write('Gene analysis time: %s\n' %(gene_stop - gene_start))
+        stop = datetime.datetime.now()
+        log.write('\nTotal analysis time: %s\n' %(stop - start))
 
 if __name__ == '__main__':
     main()

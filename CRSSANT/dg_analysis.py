@@ -162,6 +162,8 @@ def create_dg_dict(dg_reads_dict, reads_dict, ng_ind):
                   ]
         overlapping_l = 0
         overlapping_r = 0
+        
+        
         # Calculate coverage
         for read_id in gene_reads:
             read_inds = reads_dict[read_id][0:4]
@@ -171,6 +173,8 @@ def create_dg_dict(dg_reads_dict, reads_dict, ng_ind):
             if ratio_r > 0:
                 overlapping_r += 1
         cov = len(dg_reads) / np.sqrt(overlapping_l * overlapping_r)
+        
+        
         # Assign NG
         if len(ng_dict) == 0:
             ng_dict[ng_ind] = [dg]

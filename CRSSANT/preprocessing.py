@@ -131,23 +131,26 @@ def init_outputs(in_sam, out_sam, out_info, out_bp, out_aux):
         for line in f_r:
             if line[0] == '@':
                 f_w.write(line)
-            else:
-                pass
             
-    with open(out_info, 'w') as f_w:
+            
+    with open(out_info, 'w') as f:
         pass
     
-    with open(out_bp, 'w') as f_w:
-        pass
-    with open(out_aux, 'w') as f_w:
+    
+    with open(out_bp, 'w') as f:
+        f.write('track graphType=arc itemRgb=on\n')
+        
+        
+    with open(out_aux, 'w') as f:
         header = [
             'DG_coverage', 'UU_cl,UC_cl,helix_length', 'PASS',
             'L_start_min,L_start_max,L_start_std', 
             'L_stop_min,L_stop_max,L_stop_std',
             'R_start_min,R_start_max,R_start_std', 
             'R_stop_min,R_stop_max,R_stop_std']
-        f_w.write('\t'.join(header) + '\n')
-###############################################################################        
+        f.write('\t'.join(header) + '\n')
+    return
+
         
 def get_genes(ref_dict, regions):
     """

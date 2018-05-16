@@ -51,13 +51,9 @@ def process_cigar(cigar_str):
     if ops[0] != 'S':
         lens = [0] + lens
         ops = ['S'] + ops
-    else:
-        pass
     if ops[-1] != 'S':
         lens = lens + [0]
         ops = ops + ['S']
-    else:
-        pass
     return ops, lens
 
 
@@ -76,8 +72,7 @@ def get_overlap_ratios(inds_1, inds_2):
 
     Returns
     -------
-    float, float
-
+    ratio_l, ratio_r : float, float
     """
     overlap_l = min(inds_1[1], inds_2[1]) - \
                 max(inds_1[0], inds_2[0]) + 1
@@ -132,15 +127,11 @@ def fold_optimize_stem(stem_inds, ref_seq):
             off_inds = [i for i in range(cut_point) if fc[i] == ')']
             seq_l = seq_l[off_inds[-1] + 1 : ]
             folded_stem_inds[0] += off_inds[-1] + 1
-        else:
-            pass
         if set(fc[cut_point:]).issubset(set('.)')) is False:
             off_inds = [i for i in range(len(seq_r)) if 
                         fc[cut_point : ][i] == '(']
             seq_r = seq_r[ : off_inds[0]]
             folded_stem_inds[3] = folded_stem_inds[2] + off_inds[0] - 1
-        else:
-            pass
         # Re-attempt helix folding/fold helix again if no truncation
         cut_point = len(seq_l)
         seq = seq_l + seq_r
@@ -155,8 +146,6 @@ def fold_optimize_stem(stem_inds, ref_seq):
             folded_stem_inds = np.zeros(4)
             fc = '.' * len(seq)
             mfe = 0.0
-        else:
-            pass
     return folded_stem_inds, fc, mfe
 
 
@@ -185,8 +174,6 @@ def fold_stem(seq_l, seq_r):
     (set(fc_l) != set('(') or set(fc_r) != set(')')):
         fc = '.' * len(fc)
         mfe = 0.0
-    else:
-        pass
     return fc, mfe
 
 
@@ -216,8 +203,6 @@ def shuffle_stem(seq_l, seq_r, n):
             seqs_shuffled.add(seq)
             fc, mfe = fold_stem(seq_l, seq_r)
             mfes_shuffled.append(mfe)
-        else:
-            pass
         seq_l = ushuffle.shuffle(seq_l, len(seq_l), 2)
         seq_r = ushuffle.shuffle(seq_r, len(seq_r), 2)
         loop += 1
@@ -268,17 +253,16 @@ def get_stem_info(inds, fc, ref_seq):
 
     Parameters
     ----------
-        inds : np array
-            Stem indices
-        fc : str
-            Stem basepairing structure
-        ref_seq : str
-            Referene sequence
+    inds : np array
+        Stem indices
+    fc : str
+        Stem basepairing structure
+    ref_seq : str
+        Referene sequence
 
     Returns
     -------
-        crosslinks, basepairs : list, list
-
+    crosslinks, basepairs : list, list
     """
     inds_l = [(i + inds[0]) for i in range(len(fc)) if fc[i] == '(' ]
     inds_r = [(inds[3] - i) for i in range(len(fc)) if fc[::-1][i] == ')']
@@ -294,16 +278,12 @@ def get_stem_info(inds, fc, ref_seq):
                 uu_count += 1
             elif set(ref_seq[ind_l] + ref_seq[r_ind - 1]) == set('T'):
                 uc_count += 1
-            else:
-                pass
                     
         if ind_l > min(inds_l):  # Check previous base on right arm
             if (ref_seq[ind_l] == 'T') and (ref_seq[r_ind + 1] == 'T'):
                 uu_count += 1
             elif (set(ref_seq[ind_l] + ref_seq[r_ind + 1]) == set('T')):
-                uc_count += 1
-            else:
-                pass                
+                uc_count += 1           
     crosslinks = [uu_count, uc_count]
     basepairs = [inds_l, inds_r]
     return crosslinks, basepairs

@@ -97,14 +97,12 @@ def write_aux(
 
 def write_bp(bed_file, stem_dict, struct_list, region, gene):
     with open(bed_file, 'a') as f:
-        f.write('track graphType=arc itemRgb=on\n')
         for dg in struct_list:
-            basepairs = stem_dict[dg]['basepairs']
-            basepairs = np.array(basepairs) + 1  # biology is 1-indexed
-                for [left_ind, right_ind] in helix_inds.T:
-                    line = [region, str(left_ind), str(right_ind), rna, '1',
-                            '+', str(left_ind), str(left_ind), '0,0,0']
-                    f.write('\t'.join(line) + '\n')
-             
+            bp_l, bp_r = stem_dict[dg]['basepairs']
+            for (ind_l, ind_r) in zip(bp_l, bp_r):
+                line = [
+                    region, str(ind_l + 1), str(ind_r + 1), gene, '1','+', 
+                    str(ind_l), str(ind_r), '0,0,0'
+                ]  # biology is 1-indexed
+                f.write('\t'.join(line) + '\n')          
     return
-###############################################################################
