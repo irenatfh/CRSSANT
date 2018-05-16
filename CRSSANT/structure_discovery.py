@@ -16,9 +16,9 @@ import bisect
 import subfunctions as sf
 
 
-def get_struct_dict(dg_dict, ref_seq):
+def get_stem_dict(dg_dict, ref_seq):
     """
-    Function to extract valid structures to a new dictionary
+    Function to extract valid stems to a new dictionary
 
     Parameters
     ----------
@@ -28,32 +28,35 @@ def get_struct_dict(dg_dict, ref_seq):
 
     Returns
     -------
-    struct_dict : dict
+    stem_dict : dict
     """
-    struct_dict = {}
+    stem_dict = {}
     for (dg, dg_info) in dg_dict.items():
-        struct_inds, fc, mfe = sf.fold_optimize_stem(
+        inds, fc, mfe = sf.fold_optimize_stem(
             dg_info['arm_inds'], ref_seq
         )
         if mfe != 0:
-            struct_dict[dg] = {}
-            struct_dict[dg]['struct_inds'] = struct_inds
-            struct_dict[dg]['fc'] = fc
-            struct_dict[dg]['mfe'] = mfe
-    return struct_dict
+            stem_dict[dg] = {}
+            stem_dict[dg]['stem_inds'] = inds
+            stem_dict[dg]['fc'] = fc
+            stem_dict[dg]['mfe'] = mfe
+            crosslinks, basepairs = sf.get_stem_info(inds, fc, ref_seq)
+            stem_dict[dg]['crosslinks'] = crosslinks
+            stem_dict[dg]['basepairs'] = basepairs
+    return stem_dict
 
 
-def test_structs(struct_dict, ref_seq, gene_inds, n):
+def test_stems(stem_dict, ref_seq, gene_inds, n):
     """
-    Function to test structures using shifts and shuffles
+    Function to test stems using shifts and shuffles
     
     Shifts are random along the gene reference sequence, but shuffles
     are those that maintain dinucleotide content.
 
     Parameters
     ----------
-    struct_dict : dict
-        Dictionary of structurally-valid DGs
+    stem_dict : dict
+        Dictionary of stem-forming DGs
     ref_seq : str
         Reference sequence
     gene_inds : list
@@ -66,34 +69,34 @@ def test_structs(struct_dict, ref_seq, gene_inds, n):
     test_dict : dict
     """
     test_dict = {}
-    for (struct, struct_info) in struct_dict.items():
-        test_dict[struct] = {}
-        struct_inds = struct_info['struct_inds']
-        struct_mfe = struct_info['mfe']
+    for (stem, stem_info) in stem_dict.items():
+        test_dict[stem] = {}
+        stem_inds = stem_info['stem_inds']
+        stem_mfe = stem_info['mfe']
         
         
         # Shuffle arm contents
-        seq_l = ref_seq[struct_inds[0] : struct_inds[1] + 1]
-        seq_r = ref_seq[struct_inds[2] : struct_inds[3] + 1]
+        seq_l = ref_seq[stem_inds[0] : stem_inds[1] + 1]
+        seq_r = ref_seq[stem_inds[2] : stem_inds[3] + 1]
         mfes_shuffled = sf.shuffle_stem(seq_l, seq_r, n)
         ranking = bisect.bisect_right(
-            [abs(i) for i in mfes_shuffled], abs(struct_mfe)
+            [abs(i) for i in mfes_shuffled], abs(stem_mfe)
         )
-        test_dict[struct]['shuffles'] = ranking / len(mfes_shuffled)
+        test_dict[stem]['shuffles'] = ranking / len(mfes_shuffled)
 
         
         # Shift arms
-        mfes_shifted = sf.shift_stem(struct_inds, ref_seq, gene_inds, n)
+        mfes_shifted = sf.shift_stem(stem_inds, ref_seq, gene_inds, n)
         ranking = bisect.bisect_right(
-            [abs(i) for i in mfes_shifted], abs(struct_mfe)
+            [abs(i) for i in mfes_shifted], abs(stem_mfe)
         )
-        test_dict[struct]['shifts'] = ranking / len(mfes_shifted)
+        test_dict[stem]['shifts'] = ranking / len(mfes_shifted)
     return test_dict
 
 
-def filter_structs(test_dict, t):
+def filter_stems(test_dict, t):
     """
-    Function that checks which structures exceed a validity threshold
+    Function to check which stems pass a validity threshold
 
     Parameters
     ----------
@@ -104,11 +107,10 @@ def filter_structs(test_dict, t):
 
     Returns
     -------
-    struct_list : dict
+    stem_list : dict
     """
-    struct_list = []
-    for (struct, tests) in test_dict.items():
-        if (tests['shuffles'] > t) and (tests['shifts'] > t):
-            struct_list.append(struct)
-    return struct_list
-        
+    stem_list = []
+    for (stem, tests) in test_dict.items():
+        if (tests['shuffles'] >= t) and (tests['shifts'] >= t):
+            stem_list.append(stem)
+    return stem_list

@@ -1,3 +1,17 @@
+#!/usr/bin/env python
+#
+# This file is part of CRSSANT:
+# Computational RNA Secondary Structure Analysis using Network Techniques
+#
+###############################################################################
+
+"""
+Main script for running CRSSANT analysis and discovery pipelines
+"""
+
+# Author: Irena Fischer-Hwang
+# Contact: ihwang@stanford.edu
+
 import numpy as np
 import re
 import math
@@ -5,7 +19,6 @@ import RNA
 import ushuffle
 
 
-################################################################################
 def process_cigar(cigar_str):
     """
     Function to process CIGAR string in sequencing reads
@@ -38,9 +51,13 @@ def process_cigar(cigar_str):
     if ops[0] != 'S':
         lens = [0] + lens
         ops = ['S'] + ops
+    else:
+        pass
     if ops[-1] != 'S':
         lens = lens + [0]
         ops = ops + ['S']
+    else:
+        pass
     return ops, lens
 
 
@@ -115,11 +132,15 @@ def fold_optimize_stem(stem_inds, ref_seq):
             off_inds = [i for i in range(cut_point) if fc[i] == ')']
             seq_l = seq_l[off_inds[-1] + 1 : ]
             folded_stem_inds[0] += off_inds[-1] + 1
+        else:
+            pass
         if set(fc[cut_point:]).issubset(set('.)')) is False:
             off_inds = [i for i in range(len(seq_r)) if 
                         fc[cut_point : ][i] == '(']
             seq_r = seq_r[ : off_inds[0]]
             folded_stem_inds[3] = folded_stem_inds[2] + off_inds[0] - 1
+        else:
+            pass
         # Re-attempt helix folding/fold helix again if no truncation
         cut_point = len(seq_l)
         seq = seq_l + seq_r
@@ -164,6 +185,8 @@ def fold_stem(seq_l, seq_r):
     (set(fc_l) != set('(') or set(fc_r) != set(')')):
         fc = '.' * len(fc)
         mfe = 0.0
+    else:
+        pass
     return fc, mfe
 
 
@@ -193,6 +216,8 @@ def shuffle_stem(seq_l, seq_r, n):
             seqs_shuffled.add(seq)
             fc, mfe = fold_stem(seq_l, seq_r)
             mfes_shuffled.append(mfe)
+        else:
+            pass
         seq_l = ushuffle.shuffle(seq_l, len(seq_l), 2)
         seq_r = ushuffle.shuffle(seq_r, len(seq_r), 2)
         loop += 1
@@ -235,45 +260,50 @@ def shift_stem(stem_inds, ref_seq, gene_inds, n):
     return mfes_shifted
 
 
-################################################################################
-def count_crosslinks(seq, fc):
+def get_stem_info(inds, fc, ref_seq):
     """
-    Count uridine crosslinking sites in the DG sequence.
+    Function to get crosslinking and basepairing information
 
-    Valid crosslinks are U-U and U-C.
+    Valid crosslinks are U-U and U-C
 
     Parameters
     ----------
-    seq : str
-        DG sequence, left and right arms concatenated
-    fc : str
-        ViennaRNA folding structure
+        inds : np array
+            Stem indices
+        fc : str
+            Stem basepairing structure
+        ref_seq : str
+            Referene sequence
 
     Returns
     -------
-    np array
-        [uu crosslink count, uc crosslink count, helix length]
+        crosslinks, basepairs : list, list
 
     """
-    l_bp_inds = [i for i in range(len(seq)) if fc[i] == '(' ]
-    r_bp_inds = [i for i in range(len(seq)) if fc[i] == ')' ][::-1]
-    uu_cl_counter = 0
-    uc_cl_counter = 0
-    for (l_ind, r_ind) in zip(l_bp_inds, r_bp_inds):
-        if l_ind < max(l_bp_inds): # Check previous base on right arm
-            if (set(seq[l_ind] + seq[r_ind-1]) == set('TC')) or \
-                (set(seq[l_ind] + seq[r_ind-1]) == set('T')):
-                if (seq[l_ind] == 'T') and (seq[r_ind-1] == 'T'):
-                    uu_cl_counter += 1
-                else:
-                    uc_cl_counter += 1
+    inds_l = [(i + inds[0]) for i in range(len(fc)) if fc[i] == '(' ]
+    inds_r = [(inds[3] - i) for i in range(len(fc)) if fc[::-1][i] == ')']
+    inds_r = inds_r[::-1]
+    
+    
+    # Check crosslinking sites
+    uu_count = 0
+    uc_count = 0
+    for (ind_l, r_ind) in zip(inds_l, inds_r):
+        if ind_l < max(inds_l):  # Check next base on right arm
+            if (ref_seq[ind_l] == 'T') and (ref_seq[r_ind - 1] == 'T'):
+                uu_count += 1
+            elif set(ref_seq[ind_l] + ref_seq[r_ind - 1]) == set('T'):
+                uc_count += 1
+            else:
+                pass
                     
-        if l_ind > min(l_bp_inds):# Check following base on right arm
-            if (set(seq[l_ind] + seq[r_ind+1]) == set('TC')) or \
-                (set(seq[l_ind] + seq[r_ind+1]) == set('T')):
-                if (seq[l_ind] == 'T') and (seq[r_ind+1] == 'T'):
-                    uu_cl_counter += 1
-                else:
-                    uc_cl_counter += 1
-                    
-    return np.array([uu_cl_counter, uc_cl_counter, len(l_bp_inds)], dtype=np.int)
+        if ind_l > min(inds_l):  # Check previous base on right arm
+            if (ref_seq[ind_l] == 'T') and (ref_seq[r_ind + 1] == 'T'):
+                uu_count += 1
+            elif (set(ref_seq[ind_l] + ref_seq[r_ind + 1]) == set('T')):
+                uc_count += 1
+            else:
+                pass                
+    crosslinks = [uu_count, uc_count]
+    basepairs = [inds_l, inds_r]
+    return crosslinks, basepairs

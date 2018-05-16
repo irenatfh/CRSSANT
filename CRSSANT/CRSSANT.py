@@ -99,7 +99,6 @@ def main():
     reads_dict = pp.parse_reads(args.reads, ref_dict)
     
 
-    # Analyze reads to obtain DGs
     with open(files.log, 'w') as log:
         log.write('Analyzing duplex groups (DGs)\n')
         dg_ind = 0
@@ -118,6 +117,9 @@ def main():
                     %(len(gene_ids), gene)
                 )
                 if len(gene_ids) > 1:
+                    
+                    
+                    # Analyze reads to obtain DGs
                     if len(gene_ids) > max_reads:
                         inds_samp = np.random.choice(
                             len(gene_ids), max_reads, replace=False
@@ -148,21 +150,31 @@ def main():
                     dg_dict, ng_ind = da.create_dg_dict(
                         dg_filtered_dict, reads_dict, ng_ind
                     )
-                    op.write_info_bed(files.out_info, dg_dict, region)
+                    
+                    
+                    # Output SAM and _info.bed files after DG analysis
+                    op.write_info(files.out_info, dg_dict, region)
                     op.write_dg_ng_sam(
                         args.reads, files.out_sam, dg_reads_dict, dg_dict
                     )
     
     
-            # Analyze DGs to discover new secondary structures
-            struct_dict = sd.get_struct_dict(dg_dict, region_seq)
-            test_dict = sd.test_structs(
-                struct_dict, region_seq, gene_inds, tests
-            )
-            struct_list = sd.filter_structs(test_dict, min_rank)
-            print(list(dg_dict.keys()), len(dg_dict.keys()))
-            print(struct_list, len(struct_list))
-    
+                    # Analyze DGs to discover new secondary structures
+                    stem_dict = sd.get_stem_dict(dg_dict, region_seq)
+                    test_dict = sd.test_stems(
+                        stem_dict, region_seq, gene_inds, tests
+                    )
+                    struct_list = sd.filter_stems(test_dict, min_rank)
+                    op.write_aux(
+                        files.out_aux, dg_dict, dg_reads_dict, reads_dict, 
+                        stem_dict, struct_list
+                    )
+                    op.write_bp(
+                        files.out_bp, stem_dict, struct_list, region, gene
+                    )
+                    
+                    #
+
 if __name__ == '__main__':
     main()
 ###############################################################################

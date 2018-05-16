@@ -141,13 +141,13 @@ def init_outputs(in_sam, out_sam, out_info, out_bp, out_aux):
         pass
     with open(out_aux, 'w') as f_w:
         header = [
-            'DG_coverage', 'UU_cl,UC_cl,helix_length', 
-            'L_start_start,L_start_stop,L_start_std', 
-            'L_stop_start,L_stop_stop,L_stop_std',
-            'R_start_start,R_start_stop,R_start_std', 
-            'R_stop_start,R_stop_stop,R_stop_std']
+            'DG_coverage', 'UU_cl,UC_cl,helix_length', 'PASS',
+            'L_start_min,L_start_max,L_start_std', 
+            'L_stop_min,L_stop_max,L_stop_std',
+            'R_start_min,R_start_max,R_start_std', 
+            'R_stop_min,R_stop_max,R_stop_std']
         f_w.write('\t'.join(header) + '\n')
-        
+###############################################################################        
         
 def get_genes(ref_dict, regions):
     """
