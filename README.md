@@ -14,14 +14,16 @@ CRSSANT is packaged as a Python executable, so no prerequisites are needed. Down
 To run CRSSANT, open a command-line interface and enter the following:
 
 ```
-Give an example
+CRSSANT_path/CRSSANT.exe reads.sam reference.seq reference.bed -r regions -g genes output
 ```
-
+Where files `reads.sam`, `reference.seq`, and `reference.bed` include paths to the files, and `output` is a path to where outputs should be written.
 
 ### Test
 
-To test CRSSANT, you can run CRSSANT on test data included with the executable:
+You can test CRSSANT using a collection of test data that we have compiled:
 
+1. Download the [folder](https://github.com/ihwang/CRSSANT/CRSSANT/tests) of test data
+2. 
 ```
 Give an example
 ```
