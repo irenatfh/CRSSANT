@@ -1,6 +1,6 @@
 # CRSSANT: Computational RNA Secondary Structure Analysis using Network Techniques
 
-CRSSANT is an analysis pipeline for sequencing data that were produced using the PARIS assay described in [Lu et al., Cell 2016](https://www.sciencedirect.com/science/article/pii/S0092867416304226). CRSSANT automates the process of grouping sequencing reads into duplex groups (DGs), and tests the DGs to find potential secondary structures.
+CRSSANT is an analysis pipeline for sequencing data produced using the PARIS assay described in [Lu et al., Cell 2016](https://www.sciencedirect.com/science/article/pii/S0092867416304226). CRSSANT automates the process of grouping sequencing reads into duplex groups (DGs), and tests the DGs to find potential secondary structures.
 
 
 ## Getting Started
@@ -11,12 +11,17 @@ CRSSANT is packaged as a Python executable, so no prerequisites are needed. Down
 
 ### Run
 
+To run CRSSANT, open a command-line interface and enter the following:
+
+```
+Give an example
+```
+
 
 ### Test
 
+To test CRSSANT, you can run CRSSANT on test data included with the executable:
 
-## Authors
-
-* **Irena Fischer-Hwang** - *Initial work* - [ihwang](https://github.com/ihwang)
-
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
+```
+Give an example
+```
