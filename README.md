@@ -37,22 +37,22 @@ CRSSANT_path/CRSSANT.exe reads.sam reference.fa reference.bed -g gene output
 
 * To run CRSSANT on a particular genes and regions of interest, run with both region and gene flags:
 ```
-CRSSANT_path/CRSSANT.exe reads.sam reference.fa reference.bed -r region1, region2 -g gene1,gene2,gene3 output
+CRSSANT_path/CRSSANT.exe reads.sam reference.fa reference.bed -r region1,region2 -g gene1,gene2,gene3 output
 ```
 
 ### Test
 
 You can test CRSSANT using a collection of Homo sapiens ribosomal RNA (rRNA) test data that we have compiled:
 
-1. Download the [folder](https://github.com/ihwang/CRSSANT/tests) of test data to a known path/location, e.g. `downloads`
+1. Download the [folder](https://github.com/ihwang/CRSSANT/tree/master/tests) of test data to a known path/location, e.g. `downloads`
 2. Specify the path/location where results should be written, e.g. `results`
 
-Run CRSSANT on all regions and genes:
+Run CRSSANT on all rRNA regions and genes:
 ```
 CRSSANT_path/CRSSANT.exe downloads/hsrRNA_reads.sam hsrRNA.fa hsrRNA_gene.bed output
 ```
 
-or analyze all genes in region hs12S and only genes 5.8S and 28S in region hs45S:
+or analyze specific regions and genes, eg.g. all genes in region hs12S and only genes 5.8S and 28S in region hs45S:
 ```
 CRSSANT_path/CRSSANT.exe downloads/hsrRNA_reads.sam hsrRNA.fa hsrRNA_gene.bed -r hs12S -g 5.8S,28S output
 ```
