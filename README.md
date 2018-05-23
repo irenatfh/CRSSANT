@@ -3,13 +3,11 @@
 CRSSANT is an analysis pipeline for sequencing data produced using the PARIS assay described in [Lu et al., Cell 2016](https://www.sciencedirect.com/science/article/pii/S0092867416304226). CRSSANT automates the process of grouping sequencing reads into duplex groups (DGs), and tests the DGs to find potential secondary structures.
 
 
-## Getting Started
+## Install
 
-### Install
+CRSSANT is packaged as a Python executable, so no prerequisites are needed. Download the appropriate executable from the [release](https://github.com/ihwang/CRSSANT/releases) page and save it to a known path/location, e.g. `CRSSANT_path`.
 
-CRSSANT is packaged as a Python executable, so no prerequisites are needed. Download the appropriate executable from the [release](https://github.com/ihwang/CRSSANT/releases/tag/0.1) page and save it to a known path/location, e.g. `CRSSANT_path`.
-
-### Run
+## Run
 
 To run CRSSANT, open a command-line interface and run
 ```
@@ -22,7 +20,7 @@ To perform the CRSSANT analysis pipeline on all rRNA regions and genes, run:
 CRSSANT_path/CRSSANT.exe reads.sam reference.fa reference.bed output
 ```
 
-#### Specifying regions and genes for analysis
+### Specifying regions and genes for analysis
 Genomic regions and genes of interest may be specified with the region flag `-r` and gene flag `-g`. Note that the regions and genes may be specified independently, and that multiple regions and genes may be specified as comma-separated strings, eg. `-r region1,region2,region3` or `-g gene1,gene2`.
 
 * To perform CRSSANT analysis on a particular region of interest, run with flag `-r`:
@@ -39,7 +37,7 @@ CRSSANT_path/CRSSANT.exe reads.sam reference.fa reference.bed -g gene output
 ```
 CRSSANT_path/CRSSANT.exe reads.sam reference.fa reference.bed -r region1,region2 -g gene1,gene2,gene3 output
 ```
-#### Outputs
+### Outputs
 CRSSANT will produce the following 5 output files with these extensions added to the original file name:
 
 1. `_CRSSANT.log`: logfile recording which regions and genes were analyzed
