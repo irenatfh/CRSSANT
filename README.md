@@ -53,11 +53,11 @@ where `coverage` is defined as c / sqrt(a\*b) and
 4. `_CRSSANT.aux`: auxiliary file containing crosslinking and stem length information, and arm statistics for each DG--see file header
 5. `_CRSSANT_bp.bed`: BED file containing basepairs for only the DGs that pass structure tests
 
-### Test
+## Test
 
 You can test CRSSANT using a collection of Homo sapiens ribosomal RNA (rRNA) test data that we have compiled:
 
-1. Download the [folder](https://github.com/ihwang/CRSSANT/tree/master/tests) of test data to a known path/location, e.g. `downloads`
+1. Download the compressed [folder](https://github.com/ihwang/CRSSANT/tree/master/tests.tar.gz)` of test data to a known path/location, e.g. `downloads` and decompress using the command `tar -zxvf tests.tar.gz`
 2. Specify the path/location where results should be written, e.g. `results`
 
 Run CRSSANT on all rRNA regions and genes:
