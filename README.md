@@ -11,13 +11,13 @@ CRSSANT is packaged as a Python executable, so no prerequisites are needed. Down
 
 To run CRSSANT, open a command-line interface and run
 ```
-CRSSANT_path/CRSSANT.exe reads.sam reference.fa reference.bed -r regions -g genes output
+CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -r regions -g genes output
 ```
 where files `reads.sam`, `reference.fa`, and `reference.bed` include paths to the files reads, reference sequence and reference gene files, respectively, and `output` is the path/location where outputs should be written.
 
 To perform the CRSSANT analysis pipeline on all rRNA regions and genes, run:
 ```
-CRSSANT_path/CRSSANT.exe reads.sam reference.fa reference.bed output
+CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed output
 ```
 
 ### Specifying regions and genes for analysis
@@ -25,17 +25,17 @@ Genomic regions and genes of interest may be specified with the region flag `-r`
 
 * To perform CRSSANT analysis on a particular region of interest, run with flag `-r`:
 ```
-CRSSANT_path/CRSSANT.exe reads.sam reference.fa reference.bed -r region output
+CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -r region output
 ```
 
 * To run CRSSANT on a particular gene of interest, run with flag `-g`:
 ```
-CRSSANT_path/CRSSANT.exe reads.sam reference.fa reference.bed -g gene output
+CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -g gene output
 ```
 
 * To run CRSSANT on a particular genes and regions of interest, run with both region and gene flags:
 ```
-CRSSANT_path/CRSSANT.exe reads.sam reference.fa reference.bed -r region1,region2 -g gene1,gene2,gene3 output
+CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -r region1,region2 -g gene1,gene2,gene3 output
 ```
 ### Outputs
 CRSSANT will produce the following 5 output files with these extensions added to the original file name:
@@ -57,15 +57,15 @@ where `coverage` is defined as c / sqrt(a\*b) and
 
 You can test CRSSANT using a collection of Homo sapiens ribosomal RNA (rRNA) test data that we have compiled:
 
-1. Download the compressed [folder](https://github.com/ihwang/CRSSANT/tree/master/tests.tar.gz)` of test data to a known path/location, e.g. `downloads` and decompress using the command `tar -zxvf tests.tar.gz`
-2. Specify the path/location where results should be written, e.g. `results`
+1. Download the compressed folder of [test data](https://github.com/ihwang/CRSSANT/tree/master/tests.tar.gz) and decompress using the command `tar -zxvf tests.tar.gz` or by double-clicking on the tar.gz file
+2. Specify the path/location where results should be written, e.g. `output`
 
 Run CRSSANT on all rRNA regions and genes:
 ```
-CRSSANT_path/CRSSANT.exe downloads/hsrRNA_reads.sam hsrRNA.fa hsrRNA_gene.bed output
+CRSSANT_path/CRSSANT tests/hsrRNA_reads.sam tests/hsrRNA.fa tests/hsrRNA_gene.bed output
 ```
 
 or analyze specific regions and genes, e.g. all genes in region hs12S and only genes 5.8S and 28S in region hs45S:
 ```
-CRSSANT_path/CRSSANT.exe downloads/hsrRNA_reads.sam hsrRNA.fa hsrRNA_gene.bed -r hs12S -g 5.8S,28S output
+CRSSANT_path/CRSSANT tests/hsrRNA_reads.sam tests/hsrRNA.fa tests/hsrRNA_gene.bed -r hs12S -g 5.8S,28S output
 ```
