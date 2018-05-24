@@ -13,7 +13,7 @@ To run CRSSANT, open a command-line interface and run
 ```
 CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -r regions -g genes output
 ```
-where files `reads.sam`, `reference.fa`, and `reference.bed` include paths to the files reads, reference sequence and reference gene files, respectively, and `output` is the path/location where outputs should be written.
+where files `reads.sam`, `reference.fa`, and `reference.bed` include paths to the files reads, reference sequence and reference gene files, respectively, and `output` is the path/location where outputs should be written. See below for how to specify regions and genes using the `-r` and `-g` flags.
 
 To perform the CRSSANT analysis pipeline on all rRNA regions and genes, run:
 ```
@@ -50,8 +50,14 @@ where `coverage` is defined as c / sqrt(a\*b) and
 * c = number of reads in a given DG
 * a = number of reads overlapping the left arm of the DG
 * b = number of reads overlapping the right arm of the DG
-4. `_CRSSANT.aux`: auxiliary file containing crosslinking and stem length information, and arm statistics for each DG--see file header
+4. `_CRSSANT.aux`: auxiliary file containing crosslinking and stem length information, and arm statistics for each DG (see file header)
 5. `_CRSSANT_bp.bed`: BED file containing basepairs for only the DGs that pass structure tests
+
+### Help
+To see specifics on arguments for running CRSSANT, run
+```
+CRSSANT_path/CRSSANT -h
+```
 
 ## Test
 
