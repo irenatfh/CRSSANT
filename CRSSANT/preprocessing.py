@@ -1,5 +1,5 @@
 # This file is part of CRSSANT:
-# Computational RNA Secondary Structure Analysis using Network Techniques
+# Crosslinked RNA Secondary Structure Analysis using Network Techniques
 #
 ###############################################################################
 """
@@ -32,14 +32,27 @@ def get_reference_dict(seq_file, gene_file):
     """
     ref_dict = {}
     with open(seq_file, 'r') as f:
+        region_flag = 0
         for line in f:
             if line[0] == '>':
+                try:
+                    region
+                except NameError:
+                    pass
+                else:
+                    ref_dict[region]['sequence'] = ''.join(ref_dict[region]['sequence'])
                 region = line.split('>')[-1].rstrip()
+                region_flag = 1
             else:
-                ref_dict[region] = {}
-                ref_dict[region]['sequence'] = line.rstrip()
-                ref_dict[region]['genes'] = {}
-
+                if region_flag == 1:
+                    ref_dict[region] = {}
+                    ref_dict[region]['genes'] = {}
+                    ref_dict[region]['sequence'] = [line.rstrip()]
+                    region_flag = 0
+                else:
+                    ref_dict[region]['sequence'].append(line.rstrip())
+                  
+                
     with open(gene_file, 'r') as f:
         for line in f:
             data = line.split('\t')

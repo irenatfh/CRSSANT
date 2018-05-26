@@ -1,5 +1,5 @@
 # This file is part of CRSSANT:
-# Computational RNA Secondary Structure Analysis using Network Techniques
+# Crosslinked RNA Secondary Structure Analysis using Network Techniques
 #
 ###############################################################################
 """
