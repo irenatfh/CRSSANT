@@ -19,16 +19,16 @@ def write_info(bed_file, dg_dict, region):
             dg_inds = dg_info['arm_inds']
             coverage = dg_info['coverage']
             num_reads = dg_info['num_reads']
-            left_start = dg_inds[0] + 1  # biology is 1-indexed
-            right_start = dg_inds[2] + 1
-            right_stop = dg_inds[3] + 1
-            left_len = dg_inds[1] - dg_inds[0] + 1
-            right_len = dg_inds[3] - dg_inds[2] + 1
+            l_start = dg_inds[0] + 1  # biology is 1-indexed
+            r_start = dg_inds[2] + 1
+            r_stop = dg_inds[3] + 1
+            l_len = dg_inds[1] - dg_inds[0] + 1
+            r_len = dg_inds[3] - dg_inds[2] + 1
             dg_str = 'Group_%d_%.16f' %(dg, coverage)
-            line = [region, str(left_start), str(right_stop), dg_str, 
-                    str(num_reads), '-', str(left_start), str(left_start), 
-                    '0,0,0', '2', '%d,%d' %(left_len, right_len), 
-                    '0,%d' %(right_start - left_start)]
+            line = [region, str(l_start), str(r_stop), dg_str, 
+                    str(num_reads), '-', str(l_start), str(l_start), 
+                    '0,0,0', '2', '%d,%d' %(l_len, r_len), 
+                    '0,%d' %(r_start - l_start)]
             f.write('\t'.join(line) + '\n')     
     return
 
@@ -98,11 +98,11 @@ def write_aux(
 def write_bp(bed_file, stem_dict, struct_list, region, gene):
     with open(bed_file, 'a') as f:
         for dg in struct_list:
-            bp_l, bp_r = stem_dict[dg]['basepairs']
-            for (ind_l, ind_r) in zip(bp_l, bp_r):
+            l_bp, r_bp = stem_dict[dg]['basepairs']
+            for (l_ind, ind_r) in zip(l_bp, r_bp):
                 line = [
-                    region, str(ind_l + 1), str(ind_r + 1), gene, '1','+', 
-                    str(ind_l), str(ind_r), '0,0,0'
+                    region, str(l_ind + 1), str(ind_r + 1), gene, '1','+', 
+                    str(l_ind), str(ind_r), '0,0,0'
                 ]  # biology is 1-indexed
                 f.write('\t'.join(line) + '\n')          
     return

@@ -31,8 +31,9 @@ min_rank = 0.75
 class ReadsFiles(object):
     """
     """
-    def __init__(self, reads, out):
-        self.name = reads.split('/')[-1].split('.sam')[0] + '_CRSSANT'
+    def __init__(self, reads, out, region_gene_str):
+        self.name = reads.split('/')[-1].split('.sam')[0] + '_CRSSANT_' + \
+                    region_gene_str
         self.out_sam = out + self.name + '.sam'
         self.out_info = out + self.name + '_info.bed'
         self.out_bp = out + self.name + '_bp.bed'
@@ -70,18 +71,16 @@ def parse_args():
 def main():
     
     
-    # Read in arguments, parse reads, and initialize files
+    # Read in arguments, parse reads, and initialize outputs
     args = parse_args()
-    files = ReadsFiles(args.reads, args.out)
-    pp.init_outputs(args.reads, files.out_sam, files.out_info, files.out_bp, 
-                    files.out_aux)
     
-    # Initialize reference dict analysis dict and parse reads
     ref_dict = pp.get_reference_dict(args.ref_seq, args.ref_genes)
     if args.regions and not args.genes:
+        region_gene_str = 'r%s' %args.regions
         args.regions = args.regions.split(',')
         args.genes = pp.get_genes(ref_dict, args.regions)
     elif args.genes and not args.regions:
+        region_gene_str = 'g%s' %args.genes
         args.genes = args.genes.split(',')
         args.regions = pp.get_regions(ref_dict, args.genes)
     elif not args.regions and not args.genes:
@@ -92,11 +91,20 @@ def main():
                  for region in ref_dict.keys()]
             )
         )
+        region_gene_str = 'r%sg%s' %(''.join(args.regions), ''.join(args.genes))
     else:
         args.regions = args.regions.split(',')
         args.genes = args.genes.split(',')
+        region_gene_str = 'r%sg%s' %(''.join(args.regions), ''.join(args.genes))
     analysis_dict = pp.get_analysis_dict(ref_dict, args.regions, args.genes)
+    
+    
     reads_dict = pp.parse_reads(args.reads, ref_dict)
+    
+    
+    files = ReadsFiles(args.reads, args.out, region_gene_str)
+    pp.init_outputs(args.reads, files.out_sam, files.out_info, files.out_bp, 
+                    files.out_aux)
     
 
     with open(files.log, 'w') as log:

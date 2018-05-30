@@ -35,12 +35,15 @@ def get_reference_dict(seq_file, gene_file):
         region_flag = 0
         for line in f:
             if line[0] == '>':
+                # Join and save sequence for previous region (if exists)
                 try:
                     region
                 except NameError:
                     pass
                 else:
-                    ref_dict[region]['sequence'] = ''.join(ref_dict[region]['sequence'])
+                    ref_dict[region]['sequence'] = ''.join(
+                        ref_dict[region]['sequence']
+                    )
                 region = line.split('>')[-1].rstrip()
                 region_flag = 1
             else:
@@ -51,6 +54,8 @@ def get_reference_dict(seq_file, gene_file):
                     region_flag = 0
                 else:
                     ref_dict[region]['sequence'].append(line.rstrip())
+    # Join sequence string for final region
+    ref_dict[region]['sequence'] = ''.join(ref_dict[region]['sequence'])
                   
                 
     with open(gene_file, 'r') as f:
