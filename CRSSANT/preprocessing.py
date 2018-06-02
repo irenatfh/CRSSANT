@@ -104,24 +104,24 @@ def parse_reads(reads_file, ref_dict):
                 if (xg == 'XG:i:0') or (xg == 'XG:i:1'):
                     cigar_ops, cigar_lens = sf.process_cigar(cigar_str)
                     if cigar_ops == ['S', 'M', 'N', 'M', 'S']:
-                        l_pos_start = pos_align - 1  # biology is 0-indexed
-                        l_pos_stop = l_pos_start + cigar_lens[1] - 1
-                        r_pos_start = l_pos_stop + cigar_lens[2] + 1
-                        r_pos_stop = r_pos_start + cigar_lens[3] - 1
-                        for (gene, inds) in ref_dict[region]['genes'].items():
-                            if inds[0] <= l_pos_start <= inds[1]:
-                                l_gene = gene
-                            if inds[0] <= r_pos_start <= inds[1]:
-                                r_gene = gene
-                        try:
-                            l_gene, r_gene
-                        except NameError:
-                            pass
-                        else:
-                            reads_dict[read_id] = [
-                                l_pos_start, l_pos_stop, r_pos_start, 
-                                r_pos_stop, region, l_gene, r_gene
-                            ]
+                        l_gene = None
+                        r_gene = None
+                        cigar_ops, cigar_lens = sf.process_cigar(cigar_str)
+                        if cigar_ops == ['S', 'M', 'N', 'M', 'S']:
+                            l_pos_start = pos_align - 1  # biology is 0-indexed
+                            l_pos_stop = l_pos_start + cigar_lens[1] - 1
+                            r_pos_start = l_pos_stop + cigar_lens[2] + 1
+                            r_pos_stop = r_pos_start + cigar_lens[3] - 1
+                            for (gene, inds) in ref_dict[region]['genes'].items():
+                                if inds[0] <= l_pos_start <= inds[1]:
+                                    l_gene = gene
+                                if inds[0] <= r_pos_start <= inds[1]:
+                                    r_gene = gene
+                            if l_gene and r_gene:
+                                reads_dict[read_id] = [
+                                    l_pos_start, l_pos_stop, r_pos_start, 
+                                    r_pos_stop, region, l_gene, r_gene
+                                ]
     return reads_dict
 
 

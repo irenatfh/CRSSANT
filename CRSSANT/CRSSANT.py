@@ -76,14 +76,15 @@ def main():
     
     ref_dict = pp.get_reference_dict(args.ref_seq, args.ref_genes)
     if args.regions and not args.genes:
-        region_gene_str = 'r%s' %args.regions
+        region_gene_str = 'r%s_g' %args.regions
         args.regions = args.regions.split(',')
         args.genes = pp.get_genes(ref_dict, args.regions)
     elif args.genes and not args.regions:
-        region_gene_str = 'g%s' %args.genes
+        region_gene_str = 'r_g%s' %args.genes
         args.genes = args.genes.split(',')
         args.regions = pp.get_regions(ref_dict, args.genes)
     elif not args.regions and not args.genes:
+        region_gene_str = 'r_g'
         args.regions = list(ref_dict.keys())
         args.genes = list(
             chain.from_iterable(
@@ -91,11 +92,10 @@ def main():
                  for region in ref_dict.keys()]
             )
         )
-        region_gene_str = 'r%sg%s' %(''.join(args.regions), ''.join(args.genes))
     else:
         args.regions = args.regions.split(',')
         args.genes = args.genes.split(',')
-        region_gene_str = 'r%sg%s' %(''.join(args.regions), ''.join(args.genes))
+        region_gene_str = 'r%s_g%s' %(''.join(args.regions), ''.join(args.genes))
     analysis_dict = pp.get_analysis_dict(ref_dict, args.regions, args.genes)
     
     

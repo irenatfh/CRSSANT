@@ -51,7 +51,7 @@ def test_stems(stem_dict, ref_seq, gene_inds, n):
     Function to test stems using shifts and shuffles
     
     Shifts are random along the gene reference sequence, but shuffles
-    are those that maintain dinucleotide content.
+    maintain dinucleotide content.
 
     Parameters
     ----------
