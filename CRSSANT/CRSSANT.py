@@ -23,7 +23,7 @@ structure_discovery as sd, output as op
 
 # Global variables
 max_reads = 2000
-min_overlap = 0.3
+min_overlap = 0.4
 tests = 100
 min_rank = 0.75
 
