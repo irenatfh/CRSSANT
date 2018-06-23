@@ -103,7 +103,7 @@ def cluster_graph(graph, dg_ind):
     for subgraph in subgraphs:
         if len(subgraph.nodes()) > 1:
             L = nx.laplacian_matrix(subgraph).todense()
-            D = np.diag(list(dict(subgraph.degree()).values()))
+            D = np.diag([subgraph.degree[node] for node in subgraph.nodes()])
             w, v = sp.linalg.eigh(L, D)
             eigengaps = np.diff(w)
             k = np.argmax(eigengaps) + 1
