@@ -13,7 +13,7 @@ To run CRSSANT, open a command-line interface and run
 ```
 CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -r regions -g genes output
 ```
-where files `reads.sam`, `reference.fa`, and `reference.bed` include paths to the files reads, reference sequence and reference gene files, respectively, and `output` is the path/location where outputs should be written. See below for how to specify regions and genes using the `-r` and `-g` flags.
+where files `reads.sam`, `reference.fa`, and `reference.bed` include paths to the files reads, reference sequence and reference gene files, respectively, and `output` is the path/location where outputs should be written. See below for how to specify regions and genes using the optional `-r` and `-g` flags. Users may also specify a chimeric reads file using the optional `-c` flag.
 
 To perform the CRSSANT analysis pipeline on all rRNA regions and genes, run:
 ```
@@ -37,6 +37,14 @@ CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -g gene output
 ```
 CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -r region1,region2 -g gene1,gene2,gene3 output
 ```
+
+### Specifying a chimeric reads file
+CRSSANT can also parse and include chimeric reads in the analysis pipeline. If you have a chimeric reads file `chimeric.sam`, you can specify it in the command line using the `-c` flag:
+```
+CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -c chimeric.sam output
+```
+When specifying the `-c` flag, the `reads.sam` file is assumed to contain only normally-aligned reads. Using the `-c` flag will create a new SAM file with filename `reads_chimeric.sam` containing an additional chiastic group (XG) field. Aligned reads from `reads.sam` are tagged `XG:i:0`, while paired chimeric reads fulfilling certain criteria are parsed and added to the file with an `XG:i:1` tag.
+
 ### Outputs
 CRSSANT will produce the following 5 output files with these extensions added to the original file name:
 
@@ -51,7 +59,7 @@ where `coverage` is defined as c / sqrt(a\*b) and
 * a = number of reads overlapping the left arm of the DG
 * b = number of reads overlapping the right arm of the DG
 4. `_CRSSANT.aux`: auxiliary file containing crosslinking and stem length information, and arm statistics for each DG (see file header)
-5. `_CRSSANT_bp.bed`: BED file containing basepairs for only the DGs that pass structure tests
+5. `_CRSSANT_bp.bed`: BED file containing basepairs for only the structurally valid DGs
 
 ### Help
 To see specifics on arguments for running CRSSANT, run
