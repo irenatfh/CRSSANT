@@ -17,6 +17,7 @@ import re
 import math
 import RNA
 import ushuffle
+from itertools import chain
 
 
 def process_cigar(cigar_str):
@@ -57,6 +58,35 @@ def process_cigar(cigar_str):
     return ops, lens
 
 
+def get_overlaps(inds_1, inds_2):
+    """
+    Calculate the overlaps between two reads and the distance spanned by them.
+    
+    The reads are each assumed to comprise two arms, a left and a right arm.
+    Parameters
+    ----------
+    inds_1 : np array
+        np array containing read indices
+        [read left start, read left stop, read right start, read right stop]
+    inds_2 : np array
+        np array containing read indices
+        [read left start, read left stop, read right start, read right stop]
+        
+    Returns
+    -------
+    overlap_l, overlap_r, span_l, span_r: int, int, int, int
+    """
+    overlap_l = min(inds_1[1], inds_2[1]) - \
+                max(inds_1[0], inds_2[0]) + 1
+    overlap_r = min(inds_1[3], inds_2[3]) - \
+                max(inds_1[2], inds_2[2]) + 1
+    span_l = max(inds_1[1], inds_2[1]) - \
+             min(inds_1[0], inds_2[0]) + 1
+    span_r = max(inds_1[3], inds_2[3]) - \
+             min(inds_1[2], inds_2[2]) + 1
+    return overlap_l, overlap_r, span_l, span_r
+
+
 def get_overlap_ratios(inds_1, inds_2):
     """
     Function to calculate the overlap ratio between two reads
@@ -74,14 +104,7 @@ def get_overlap_ratios(inds_1, inds_2):
     -------
     ratio_l, ratio_r : float, float
     """
-    overlap_l = min(inds_1[1], inds_2[1]) - \
-                max(inds_1[0], inds_2[0]) + 1
-    overlap_r = min(inds_1[3], inds_2[3]) - \
-                max(inds_1[2], inds_2[2]) + 1
-    span_l = max(inds_1[1], inds_2[1]) - \
-             min(inds_1[0], inds_2[0]) + 1
-    span_r = max(inds_1[3], inds_2[3]) - \
-             min(inds_1[2], inds_2[2]) + 1
+    overlap_l, overlap_r, span_l, span_r = get_overlaps(inds_1, inds_2)
     ratio_l = overlap_l / span_l
     ratio_r = overlap_r / span_r
     return ratio_l, ratio_r
@@ -287,3 +310,33 @@ def get_stem_info(inds, fc, ref_seq):
     crosslinks = [uu_count, uc_count]
     basepairs = [inds_l, inds_r]
     return crosslinks, basepairs
+
+
+def get_gene(inds, region, genes, ref_dict):
+    """
+    Function to get gene
+
+    This function assumes that the left and right arms of the stem
+    are located in the same gene
+
+    Parameters
+    ----------
+    inds : np array
+        Stem indices
+    region : str
+        Genomic region
+    genes : list
+        List of genes
+    ref_dict:
+        Reference dictionary
+
+    Returns
+    -------
+    gene : str
+    """
+    for gene in genes:
+        gene_start = ref_dict[region]['genes'][gene][0]
+        gene_stop = ref_dict[region]['genes'][gene][1] + 1
+        if (inds[0] in range(gene_start, gene_stop)) and \
+            (inds[2] in range(gene_start, gene_stop)):
+            return gene

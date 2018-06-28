@@ -57,6 +57,8 @@ def parse_args():
     parser.add_argument('ref_genes', 
                         help='Path to file listing genes in reference '
                         'sequence (BED)')
+    parser.add_argument('-c', '--chimeric', 
+                        help='Path to chimeric PARIS reads file (SAM)')
     parser.add_argument('-r', '--regions', 
                         help='Genomic regions of interest (separated only by '
                         'commas, should match naming system in reference)')
@@ -71,9 +73,8 @@ def parse_args():
 def main():
     
     
-    # Read in arguments, parse reads, and initialize outputs
+    # Read in arguments
     args = parse_args()
-    
     ref_dict = pp.get_reference_dict(args.ref_seq, args.ref_genes)
     if args.regions and not args.genes:
         region_gene_str = 'r%s_g' %args.regions
@@ -95,18 +96,27 @@ def main():
     else:
         args.regions = args.regions.split(',')
         args.genes = args.genes.split(',')
-        region_gene_str = 'r%s_g%s' %(''.join(args.regions), ''.join(args.genes))
+        region_gene_str = 'r%s_g%s' %(
+            ''.join(args.regions), ''.join(args.genes)
+        )
+    if args.chimeric:
+        args.reads = pp.combine_aligned_and_chimeric_reads(
+            args.reads, args.chimeric
+        )
+
+
+    # Parse analysis dictionary and reads
     analysis_dict = pp.get_analysis_dict(ref_dict, args.regions, args.genes)
-    
-    
     reads_dict = pp.parse_reads(args.reads, ref_dict)
     
     
+    # Initialize output files
     files = ReadsFiles(args.reads, args.out, region_gene_str)
     pp.init_outputs(args.reads, files.out_sam, files.out_info, files.out_bp, 
                     files.out_aux)
     
-
+    
+    # Run analysis pipeline
     with open(files.log, 'w') as log:
         start = datetime.datetime.now()
         dg_ind = 0
@@ -188,4 +198,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-###############################################################################
