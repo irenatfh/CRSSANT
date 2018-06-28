@@ -180,17 +180,11 @@ def main():
     
                     # Analyze DGs to discover new secondary structures
                     stem_dict = sd.get_stem_dict(dg_dict, region_seq)
-                    test_dict = sd.test_stems(
-                        stem_dict, region_seq, gene_inds, tests
-                    )
-                    struct_list = sd.filter_stems(test_dict, min_rank)
                     op.write_aux(
                         files.out_aux, dg_dict, dg_reads_dict, reads_dict, 
-                        stem_dict, struct_list
+                        stem_dict
                     )
-                    op.write_bp(
-                        files.out_bp, stem_dict, struct_list, region, gene
-                    )
+                    op.write_bp(files.out_bp, stem_dict, region, gene)
                 gene_stop = datetime.datetime.now()
                 log.write('Gene analysis time: %s\n' %(gene_stop - gene_start))
         stop = datetime.datetime.now()
@@ -198,3 +192,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+###############################################################################

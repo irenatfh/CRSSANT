@@ -52,8 +52,7 @@ def write_dg_ng_sam(reads_file, rna_file, dg_reads_dict, dg_dict):
 
 
 def write_aux(
-    aux_file, dg_dict, dg_reads_dict, reads_dict, stem_dict, struct_list
-):
+    aux_file, dg_dict, dg_reads_dict, reads_dict, stem_dict):
     with open(aux_file, 'a') as f:
         for (dg, dg_info) in dg_dict.items():
             coverage = dg_info['coverage']
@@ -69,14 +68,9 @@ def write_aux(
                 crosslinks_basepairs_str = ','.join(
                     crosslinks_str + basepairs_str
                 )
-                if dg in struct_list:
-                    pass_str = '1'
-                else:
-                    pass_str = '0'
             else:
                 crosslinks_basepairs_str = '0,0,0'
-                pass_str = '0'
-            line = [dg_str, crosslinks_basepairs_str, pass_str]
+            line = [dg_str, crosslinks_basepairs_str]
             
             
             # Add read edge statistics
@@ -95,10 +89,10 @@ def write_aux(
     return
 
 
-def write_bp(bed_file, stem_dict, struct_list, region, gene):
+def write_bp(bed_file, stem_dict, region, gene):
     with open(bed_file, 'a') as f:
-        for dg in struct_list:
-            l_bp, r_bp = stem_dict[dg]['basepairs']
+        for (stem, stem_info) in stem_dict.items():
+            l_bp, r_bp = stem_info['basepairs']
             for (l_ind, ind_r) in zip(l_bp, r_bp):
                 line = [
                     region, str(l_ind + 1), str(ind_r + 1), gene, '1','+', 

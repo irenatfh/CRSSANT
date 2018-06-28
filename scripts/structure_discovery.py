@@ -92,25 +92,3 @@ def test_stems(stem_dict, ref_seq, gene_inds, n):
         )
         test_dict[stem]['shifts'] = ranking / len(mfes_shifted)
     return test_dict
-
-
-def filter_stems(test_dict, t):
-    """
-    Function to check which stems pass a validity threshold
-
-    Parameters
-    ----------
-    test_dict : dict
-        Dictionary of structure test results
-    t : float
-        Validity threshold
-
-    Returns
-    -------
-    stem_list : dict
-    """
-    stem_list = []
-    for (stem, tests) in test_dict.items():
-        if (tests['shuffles'] >= t) and (tests['shifts'] >= t):
-            stem_list.append(stem)
-    return stem_list
