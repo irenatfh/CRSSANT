@@ -43,7 +43,7 @@ CRSSANT can also parse and include chimeric reads in the analysis pipeline. If y
 ```
 CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -c chimeric.sam output
 ```
-When specifying the `-c` flag, the `reads.sam` file is assumed to contain only normally-aligned reads. Using the `-c` flag will create a new SAM file with filename `reads_chimeric.sam` containing an additional chiastic group (XG) field. Aligned reads from `reads.sam` are tagged `XG:i:0`, while paired chimeric reads fulfilling certain criteria are parsed and added to the file with an `XG:i:1` tag.
+When specifying the `-c` flag, the `reads.sam` file is assumed to contain only normally-aligned reads. Using the `-c` flag will create and save a new SAM file with filename ending in `_chimeric.sam` containing an additional chiastic group (XG) field in the `reads.sam` file path. Aligned reads from `reads.sam` are tagged `XG:i:0`, while paired chimeric reads that do not have any reverse complement components are parsed and appended to the file with an `XG:i:1` tag. The CRSSANT analysis pipeline is then run on the new file.
 
 ### Outputs
 CRSSANT will produce the following 5 output files with these extensions added to the original file name:
