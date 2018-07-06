@@ -173,7 +173,7 @@ def get_reference_dict(seq_file, gene_file):
                     ref_dict[region]['sequence'] = ''.join(
                         ref_dict[region]['sequence']
                     )
-                region = line.split('>')[-1].rstrip()
+                region = line.split('>')[-1].rstrip().split(' ')[0]
                 region_flag = 1
             else:
                 if region_flag == 1:
