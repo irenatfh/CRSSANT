@@ -74,11 +74,13 @@ def add_reads_to_dg(dg_reads_dict, reads_ids, reads_dict, dg_ind, t=0.3):
         read_inds = reads_dict[read_id][:4]
         dg_overlaps = {}
         for (dg, dg_reads) in dg_reads_dict.items():
-            dg_inds = np.median(
-                np.array(
-                    [reads_dict[dg_read][:4] for dg_read in dg_reads]
-                ), axis=0
+            dg_inds_all = np.array(
+                [reads_dict[dg_read][:4] for dg_read in dg_reads]
             )
+            dg_inds = [
+                min(dg_inds_all[:,0]), max(dg_inds_all[:,1]),
+                min(dg_inds_all[:,2]), max(dg_inds_all[:,3])
+            ]
             ratio_l, ratio_r = sf.get_overlap_ratios(read_inds, dg_inds)
             if (ratio_l > t) and (ratio_r > t):
                 dg_overlaps[dg] = ratio_l + ratio_r
@@ -104,7 +106,7 @@ def filter_dgs(dg_reads_dict):
     """
     Function to filter out invalid DGs
     
-    DGs with fewer than three reads are eliminated.
+    DGs with fewer than two reads are eliminated.
 
     Parameters
     ----------
@@ -118,7 +120,7 @@ def filter_dgs(dg_reads_dict):
     filtered_dict = {}
     for (dg, dg_reads) in dg_reads_dict.items():
         num_reads = len(dg_reads)
-        if num_reads > 2:
+        if num_reads > 1:
             filtered_dict[dg] = dg_reads
     return filtered_dict
 
@@ -153,13 +155,13 @@ def create_dg_dict(dg_reads_dict, reads_dict, ng_ind):
     for (dg, dg_reads) in dg_reads_dict.items():
         dg_min = min([reads_dict[i][0] for i in dg_reads])
         dg_max = max([reads_dict[i][3] for i in dg_reads])
-        dg_inds = [int(i) for i in 
-                   np.median(
-                       np.array(
-                           [reads_dict[i][0:4] for i in dg_reads]
-                       ), axis=0
-                   )
-                  ]
+        dg_inds_all = np.array(
+            [reads_dict[dg_read][:4] for dg_read in dg_reads]
+        )
+        dg_inds = [
+            min(dg_inds_all[:,0]), max(dg_inds_all[:,1]),
+            min(dg_inds_all[:,2]), max(dg_inds_all[:,3])
+        ]
         overlapping_l = 0
         overlapping_r = 0
         

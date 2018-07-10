@@ -184,7 +184,7 @@ def main():
                         files.out_aux, dg_dict, dg_reads_dict, reads_dict, 
                         stem_dict
                     )
-                    op.write_bp(files.out_bp, stem_dict, region, gene)
+                    op.write_bp(files.out_bp, stem_dict, region)
                 gene_stop = datetime.datetime.now()
                 log.write('Gene analysis time: %s\n' %(gene_stop - gene_start))
         stop = datetime.datetime.now()

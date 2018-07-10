@@ -89,14 +89,16 @@ def write_aux(
     return
 
 
-def write_bp(bed_file, stem_dict, region, gene):
+def write_bp(bed_file, stem_dict, region):
     with open(bed_file, 'a') as f:
         for (stem, stem_info) in stem_dict.items():
             l_bp, r_bp = stem_info['basepairs']
-            for (l_ind, ind_r) in zip(l_bp, r_bp):
-                line = [
-                    region, str(l_ind + 1), str(ind_r + 1), gene, '1','+', 
-                    str(l_ind), str(ind_r), '0,0,0'
-                ]  # biology is 1-indexed
-                f.write('\t'.join(line) + '\n')          
+            line = [
+                region, 
+                str(int(np.median(l_bp)) + 1), str(int(np.median(r_bp)) + 1), 
+                str(stem), '1','+', 
+                str(int(np.median(l_bp)) + 1), str(int(np.median(r_bp)) + 1), 
+                '0,0,0'
+            ]  # biology is 1-indexed
+            f.write('\t'.join(line) + '\n')      
     return
