@@ -29,7 +29,7 @@ To perform the CRSSANT analysis pipeline on all rRNA regions and genes, run:
 ```
 CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed output
 ```
-To run the CRSSANT pipeline using the Python source code, prepend all commands by calling python on your platform, e.g. `python CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -r regions -g genes output`.
+To run the CRSSANT pipeline using the Python source code, prepend all commands by calling Python on your platform, e.g. `python CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -r regions -g genes output`.
 
 ### Specifying regions and genes for analysis
 Genomic regions and genes of interest may be specified with the region flag `-r` and gene flag `-g`. Note that the regions and genes may be specified independently, and that multiple regions and genes may be specified as comma-separated strings, eg. `-r region1,region2,region3` or `-g gene1,gene2`.
@@ -96,7 +96,7 @@ To see specifics on arguments for running CRSSANT, run
 ```
 CRSSANT_path/CRSSANT -h
 ```
-The help information may take a little bit to load (~10 seconds)
+The help information may take a little bit to load (~10 seconds).
 
 ## Test
 
