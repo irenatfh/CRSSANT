@@ -13,7 +13,9 @@ import numpy as np
 import subfunctions as sf
 
 
-def combine_aligned_and_chimeric_reads(reads, reads_chimeric):
+def combine_aligned_and_chimeric_reads(
+    reads, reads_chimeric,READS_JUNCTION=None
+):
     """
     Function to combine files of aligned and chimeric reads
     
@@ -25,7 +27,7 @@ def combine_aligned_and_chimeric_reads(reads, reads_chimeric):
     ----------
     reads : str
         Path to aligned reads file (SAM)
-    reads_chimeric : 
+    reads_chimeric : str
         Path to chimeric reads file (SAM)
 
     Returns
@@ -43,6 +45,15 @@ def combine_aligned_and_chimeric_reads(reads, reads_chimeric):
                 f.write(line.strip() + '\tXG:i:0\n')
             else:
                 f.write(line)
+                
+                
+    junction_list = []
+    if READS_JUNCTION:
+         with open(READS_JUNCTION, 'r') as f_junction:
+                for line in f_junction:
+                    data = line.rstrip().split('\t')
+                    read_id = data[9]
+                    junction_list.append(read_id)
 
 
     chimeric_dict = {}
@@ -52,9 +63,10 @@ def combine_aligned_and_chimeric_reads(reads, reads_chimeric):
                 data = line.rstrip().split('\t')
                 read_id = data[0]
                 read_flag = int(data[1])
-                if read_id not in chimeric_dict:
-                    chimeric_dict[read_id] = {}
-                chimeric_dict[read_id][read_flag] = data[2:]
+                if read_id not in junction_list:
+                    if read_id not in chimeric_dict:
+                        chimeric_dict[read_id] = {}
+                    chimeric_dict[read_id][read_flag] = data[2:]
     paired_ids = []
     for (read_id, read_dict) in chimeric_dict.items():
         if len(read_dict) == 2:

@@ -59,6 +59,8 @@ def parse_args():
                         'sequence (BED)')
     parser.add_argument('-c', '--chimeric', 
                         help='Path to chimeric PARIS reads file (SAM)')
+    parser.add_argument('-j', '--junction', 
+                        help='Path to junction PARIS reads file (JUNCTION)')
     parser.add_argument('-r', '--regions', 
                         help='Genomic regions of interest (separated only by '
                         'commas, should match naming system in reference)')
@@ -99,10 +101,18 @@ def main():
         region_gene_str = 'r%s_g%s' %(
             ''.join(args.regions), ''.join(args.genes)
         )
+    if args.junction and not args.chimeric:
+        print('.JUNCTION file must be accompanied by chimeric reads file')
+        sys.exit()
     if args.chimeric:
-        args.reads = pp.combine_aligned_and_chimeric_reads(
-            args.reads, args.chimeric
-        )
+        if args.junction:
+            args.reads = pp.combine_aligned_and_chimeric_reads(
+                args.reads, args.chimeric, args.junction
+            )
+        else:
+            args.reads = pp.combine_aligned_and_chimeric_reads(
+                args.reads, args.chimeric
+            )
 
 
     # Parse analysis dictionary and reads
