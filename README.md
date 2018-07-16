@@ -5,11 +5,21 @@ CRSSANT is an analysis pipeline for sequencing data produced using the PARIS ass
 
 ## Install
 
-CRSSANT is packaged as a Python executable, so no prerequisites are needed. Download the appropriate executable from the [release](https://github.com/ihwang/CRSSANT/releases) page and save it to a known path/location, e.g. `CRSSANT_path`.
+You can install CRSSANT either as a Python executable for Linux machines, or you can directly download all of the source code. Both the executable and source code files are available at the [release](https://github.com/ihwang/CRSSANT/releases).
+
+### Installing the Python executable:
+Navigate to the release page, right click on the executable, and save it to a known path/location, e.g. `CRSSANT_path`. You may need to change the software's permissions so that you can actually execute the pipeline via, e.g. `chmod u+x CRSSANT_path/CRSSANT`.
+
+### Downloading the Python source code:
+Navigate to the release page, right click on the source code, and save it to the known path/location, e.g. `CRSSANT_path`. You will need Python version 3.6+, as well as the following Python packages:
+* [ViennaRNA v2.4.7+](https://www.tbi.univie.ac.at/RNA/)
+* [ushuffle v1.2.2+](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-9-192)
+* [NetworkX v2.1+](https://networkx.github.io/)
+as well as typical packages like numpy, scikit-learn, and scipy. We recommend downloading the latest versions of these packages using the Ananconda/Bioconda package manager.
 
 ## Run
 
-To run CRSSANT, open a command-line interface and run
+To run the CRSSANT executable, open a command-line interface and run
 ```
 CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -r regions -g genes output
 ```
@@ -19,6 +29,7 @@ To perform the CRSSANT analysis pipeline on all rRNA regions and genes, run:
 ```
 CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed output
 ```
+To run the CRSSANT pipeline using the Python source code, prepend all commands by calling Python on your platform, e.g. `python CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -r regions -g genes output`.
 
 ### Specifying regions and genes for analysis
 Genomic regions and genes of interest may be specified with the region flag `-r` and gene flag `-g`. Note that the regions and genes may be specified independently, and that multiple regions and genes may be specified as comma-separated strings, eg. `-r region1,region2,region3` or `-g gene1,gene2`.
@@ -37,6 +48,15 @@ CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -g gene output
 ```
 CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -r region1,region2 -g gene1,gene2,gene3 output
 ```
+### Creating a `reference.bed` file
+CRSSANT assumes that the `reference.bed` file contains minimal gene information in the following 6-column format:
+```
+genomic region    gene start    gene stop    gene name    1000    +
+```
+where columns are separated by tabs. Some specifics on format:
+* `genomic region` must match the gene naming format in the `reference.fa` file
+* `gene start` and `gene stop` must be integers
+* The last two columns are default values
 
 ### Specifying a chimeric reads file
 CRSSANT can also parse and include chimeric reads in the analysis pipeline. If you have a chimeric reads file `chimeric.sam`, you can specify it in the command line using the `-c` flag:
@@ -50,7 +70,7 @@ CRSSANT will produce the following 5 output files with these extensions added to
 
 1. `_CRSSANT.log`: logfile recording which regions and genes were analyzed
 2. `_CRSSANT.sam`: SAM file containing reads that were successfully assigned to DGs, plus DG and non-overlapping group (NG) annotations
-3. `_CRSSANT_info.bed`: BED file listing all duplex groups. Column information is
+3. `_CRSSANT_info.bed`: BED file listing all duplex groups. The file header contains the following columns:
 ```
 region    DG start    DG stop    Group_ID_coverage    # reads in DG    -   DG start    DG start    color    2    DG left arm length,DG right arm length    DG left arm start,DG right arm start
 ```
@@ -58,14 +78,25 @@ where `coverage` is defined as c / sqrt(a\*b) and
 * c = number of reads in a given DG
 * a = number of reads overlapping the left arm of the DG
 * b = number of reads overlapping the right arm of the DG
-4. `_CRSSANT.aux`: auxiliary file containing crosslinking and stem length information, and arm statistics for each DG (see file header)
-5. `_CRSSANT_bp.bed`: BED file containing basepairs for only the structurally valid DGs
+4. `_CRSSANT.aux`: auxiliary file containing crosslinking and stem length information, and arm statistics for each DG. The file header contains the following columns:
+```
+DG_coverage    UU_cl,UC_cl,stem_length L_start_min,L_start_max,L_start_std     L_stop_min,L_stop_max,L_stop_std        R_start_min,R_start_max,R_start_std     R_stop_min,R_stop_max,R_stop_std
+```
+where
+* `UU_cl` and `UC_cl` are the number of staggered uridine and uridine-cytosine base pairs, respectively, in the stem structure formed by the DG
+* `stem_length` is the length of the stem structure formed by the DG. If `stem_length` is zero, then that DG did not form a valid stem structure as determined using the ViennaRNA MFE RNA folding software
+* `_min`, `_max`, `_std` are the minimum arm index, maximum arm index, and standard deviation of all start or stop indices that make up the DG arm
+5. `_CRSSANT_bp.bed`: BED file containing basepairs for only the structurally valid DGs. The file header contains the following columns:
+```
+region    DG start    DG stop     DG    1    +    DG start    DG stop     0,0,0
+```
 
 ### Help
 To see specifics on arguments for running CRSSANT, run
 ```
 CRSSANT_path/CRSSANT -h
 ```
+The help information may take a little bit to load (~10 seconds).
 
 ## Test
 
