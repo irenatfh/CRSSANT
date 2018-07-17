@@ -264,7 +264,7 @@ def parse_reads(reads_file, ref_dict):
     return reads_dict
 
 
-def init_outputs(in_sam, out_sam, out_info, out_bp, out_aux):
+def init_outputs(in_sam, out_sam, out_info, out_dg_arcs, out_dg_bps, out_aux):
     """
     Function to initialize output files
 
@@ -276,7 +276,9 @@ def init_outputs(in_sam, out_sam, out_info, out_bp, out_aux):
         Path to output reads file (SAM)
     out_info : str
         Path to output info file (BED)
-    out_bp : str
+    out_dg_arcs : str
+        Path to output arcs file (BED)
+    out_dg_bps : str
         Path to output basepairing file (BED)
     out_aux : str
         Path to output auxiliary file (AUX)
@@ -294,7 +296,11 @@ def init_outputs(in_sam, out_sam, out_info, out_bp, out_aux):
         pass
     
     
-    with open(out_bp, 'w') as f:
+    with open(out_dg_arcs, 'w') as f:
+        f.write('track graphType=arc itemRgb=on\n')
+        
+        
+    with open(out_dg_bps, 'w') as f:
         f.write('track graphType=arc itemRgb=on\n')
         
         

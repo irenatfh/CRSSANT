@@ -76,9 +76,9 @@ def test_stems(stem_dict, ref_seq, gene_inds, n):
         
         
         # Shuffle arm contents
-        seq_l = ref_seq[stem_inds[0] : stem_inds[1] + 1]
-        seq_r = ref_seq[stem_inds[2] : stem_inds[3] + 1]
-        mfes_shuffled = sf.shuffle_stem(seq_l, seq_r, n)
+        l_seq = ref_seq[stem_inds[0] : stem_inds[1] + 1]
+        r_seq = ref_seq[stem_inds[2] : stem_inds[3] + 1]
+        mfes_shuffled = sf.shuffle_stem(l_seq, r_seq, n)
         ranking = bisect.bisect_right(
             [abs(i) for i in mfes_shuffled], abs(stem_mfe)
         )

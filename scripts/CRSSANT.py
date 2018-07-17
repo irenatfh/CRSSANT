@@ -36,7 +36,8 @@ class ReadsFiles(object):
                     region_gene_str
         self.out_sam = out + self.name + '.sam'
         self.out_info = out + self.name + '_info.bed'
-        self.out_bp = out + self.name + '_bp.bed'
+        self.out_dg_arcs = out + self.name + '_dg_arcs.bed'
+        self.out_dg_bps = out + self.name + '_dg_bps.bed'
         self.out_aux = out + self.name + '.aux'
         self.log = out + self.name + '.log'
         
@@ -119,11 +120,13 @@ def main():
     analysis_dict = pp.get_analysis_dict(ref_dict, args.regions, args.genes)
     reads_dict = pp.parse_reads(args.reads, ref_dict)
     
-    
+
     # Initialize output files
     files = ReadsFiles(args.reads, args.out, region_gene_str)
-    pp.init_outputs(args.reads, files.out_sam, files.out_info, files.out_bp, 
-                    files.out_aux)
+    pp.init_outputs(
+        args.reads, files.out_sam, files.out_info, files.out_dg_arcs, 
+        files.out_dg_bps, files.out_aux
+    )
     
     
     # Run analysis pipeline
@@ -194,7 +197,16 @@ def main():
                         files.out_aux, dg_dict, dg_reads_dict, reads_dict, 
                         stem_dict
                     )
-                    op.write_bp(files.out_bp, stem_dict, region)
+                    op.write_dg_arcs(files.out_dg_arcs, dg_dict, region)
+                
+                
+                    # Attempt DG folding and write remaining output files
+                    stem_dict = sd.get_stem_dict(dg_dict, region_seq)
+                    op.write_aux(
+                        files.out_aux, dg_dict, dg_reads_dict, reads_dict, 
+                        stem_dict
+                    )
+                    op.write_dg_bps(files.out_dg_bps, stem_dict, region)
                 gene_stop = datetime.datetime.now()
                 log.write('Gene analysis time: %s\n' %(gene_stop - gene_start))
         stop = datetime.datetime.now()
@@ -202,4 +214,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-###############################################################################

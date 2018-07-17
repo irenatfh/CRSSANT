@@ -89,16 +89,36 @@ def write_aux(
     return
 
 
-def write_bp(bed_file, stem_dict, region):
+def write_dg_arcs(bed_file, dg_dict, region):
+    with open(bed_file, 'a') as f:
+        for (dg, dg_info) in dg_dict.items():
+            dg_inds = dg_info['arm_inds']
+            line = [
+                region, 
+                str(int(np.median(dg_inds[:2])) + 1),  # biology is 1-indexed
+                str(int(np.median(dg_inds[2:])) + 1),
+                str(dg), '1','+', 
+                str(int(np.median(dg_inds[:2])) + 1),
+                str(int(np.median(dg_inds[2:])) + 1),
+                '0,0,0'
+            ]
+            f.write('\t'.join(line) + '\n')      
+    return
+
+
+def write_dg_bps(bed_file, stem_dict, region):
     with open(bed_file, 'a') as f:
         for (stem, stem_info) in stem_dict.items():
             l_bp, r_bp = stem_info['basepairs']
-            line = [
-                region, 
-                str(int(np.median(l_bp)) + 1), str(int(np.median(r_bp)) + 1), 
-                str(stem), '1','+', 
-                str(int(np.median(l_bp)) + 1), str(int(np.median(r_bp)) + 1), 
-                '0,0,0'
-            ]  # biology is 1-indexed
-            f.write('\t'.join(line) + '\n')      
+            for (l_ind, r_ind) in zip(l_bp, r_bp):
+                line = [
+                    region, 
+                    str(l_ind + 1),  # biology is 1-indexed
+                    str(r_ind + 1), 
+                    str(stem), '1','+', 
+                    str(l_ind), 
+                    str(r_ind), 
+                    '0,0,0'
+                ]
+                f.write('\t'.join(line) + '\n')          
     return
