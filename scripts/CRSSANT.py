@@ -197,8 +197,8 @@ def main():
                         files.out_sg_aux, sg_dict, sg_reads_dict, dg_dict,
                         reads_dict, 
                     )
+                    op.write_sg_arcs(files.out_sg_arcs, sg_dict, region)
                     op.write_sg_bps(files.out_sg_bps, sg_dict, region)
-                    op.write_sg_arcs(files.out_sg_arcs, dg_dict, region)
                 gene_stop = datetime.datetime.now()
                 log.write('Gene analysis time: %s\n' %(gene_stop - gene_start))
         stop = datetime.datetime.now()

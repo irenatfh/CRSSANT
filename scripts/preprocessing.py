@@ -323,7 +323,7 @@ def init_outputs(in_sam, out_sam, out_info, out_dg_arcs, out_dg_bps, out_aux):
         
     with open(out_aux, 'w') as f:
         header = [
-            'DG_coverage', 'UU_cl,UC_cl,stem_length',
+            'DG_coverage', 'num_reads', 'UU_cl,UC_cl,stem_length',
             'L_start_min,L_start_max,L_start_std', 
             'L_stop_min,L_stop_max,L_stop_std',
             'R_start_min,R_start_max,R_start_std', 

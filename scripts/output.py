@@ -51,13 +51,21 @@ def write_dg_ng_sam(reads_file, rna_file, dg_reads_dict, dg_dict):
     return
 
 
-def write_aux(
-    aux_file, sg_dict, sg_reads_dict, dg_dict, reads_dict):
+def write_aux(aux_file, sg_dict, sg_reads_dict, dg_dict, reads_dict):
     with open(aux_file, 'a') as f:
         for (dg, dg_info) in dg_dict.items():
             coverage = dg_info['coverage']
             dg_str = 'Group_%d_%.16f' %(dg, coverage)
+            line = [dg_str]
             
+            
+            # Add number of reads in SG
+            if dg in sg_dict.keys():
+                num_reads_str = str(sg_dict[dg]['num_reads'])
+            else:
+                num_reads_str = '0'
+            line.append(num_reads_str)
+                
             
             # Add crosslinking, stem length and structure pass
             if dg in sg_dict.keys():
@@ -71,7 +79,7 @@ def write_aux(
                 )
             else:
                 crosslinks_basepairs_str = '0,0,0'
-            line = [dg_str, crosslinks_basepairs_str]
+            line.append(crosslinks_basepairs_str)
             
             
             # Add read edge statistics
@@ -100,11 +108,11 @@ def write_sg_arcs(bed_file, sg_dict, region):
             sg_inds = sg_info['arm_inds']
             line = [
                 region, 
-                str(int(np.median(sg_inds[:2])) + 1),  # biology is 1-indexed
-                str(int(np.median(sg_inds[2:])) + 1),
+                str(int(np.mean(sg_inds[:2])) + 1),  # biology is 1-indexed
+                str(int(np.mean(sg_inds[2:])) + 1),
                 str(sg), '1','+', 
-                str(int(np.median(sg_inds[:2])) + 1),
-                str(int(np.median(sg_inds[2:])) + 1),
+                str(int(np.mean(sg_inds[:2])) + 1),
+                str(int(np.mean(sg_inds[2:])) + 1),
                 '0,0,0'
             ]
             f.write('\t'.join(line) + '\n')      

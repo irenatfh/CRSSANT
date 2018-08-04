@@ -107,58 +107,11 @@ def create_sg_dict(sg_reads_dict, reads_dict, ref_seq):
         fc_r = [i for i in fc[cut_point : ] if i == ')' or i == '}']
         if mfe != 0:
             sg_dict[sg] = {}
-            sg_dict[sg]['num_reads'] = len(sg_reads_inds)
+            sg_dict[sg]['num_reads'] = len(sg_reads)
+            sg_dict[sg]['arm_inds'] = inds
             sg_dict[sg]['fc'] = fc
             sg_dict[sg]['mfe'] = mfe
             crosslinks, basepairs = sf.get_stem_info(inds, fc, ref_seq)
             sg_dict[sg]['crosslinks'] = crosslinks
             sg_dict[sg]['basepairs'] = basepairs
     return sg_dict
-
-
-def test_stems(stem_dict, ref_seq, gene_inds, n):
-    """
-    Function to test stems using shifts and shuffles
-    
-    Shifts are random along the gene reference sequence, but shuffles
-    maintain dinucleotide content.
-
-    Parameters
-    ----------
-    stem_dict : dict
-        Dictionary of stem-forming DGs
-    ref_seq : str
-        Reference sequence
-    gene_inds : list
-        Gene index list
-    n : int
-        Number of tests to perform
-
-    Returns
-    -------
-    test_dict : dict
-    """
-    test_dict = {}
-    for (stem, stem_info) in stem_dict.items():
-        test_dict[stem] = {}
-        stem_inds = stem_info['stem_inds']
-        stem_mfe = stem_info['mfe']
-        
-        
-        # Shuffle arm contents
-        l_seq = ref_seq[stem_inds[0] : stem_inds[1] + 1]
-        r_seq = ref_seq[stem_inds[2] : stem_inds[3] + 1]
-        mfes_shuffled = sf.shuffle_stem(l_seq, r_seq, n)
-        ranking = bisect.bisect_right(
-            [abs(i) for i in mfes_shuffled], abs(stem_mfe)
-        )
-        test_dict[stem]['shuffles'] = ranking / len(mfes_shuffled)
-
-        
-        # Shift arms
-        mfes_shifted = sf.shift_stem(stem_inds, ref_seq, gene_inds, n)
-        ranking = bisect.bisect_right(
-            [abs(i) for i in mfes_shifted], abs(stem_mfe)
-        )
-        test_dict[stem]['shifts'] = ranking / len(mfes_shifted)
-    return test_dict
