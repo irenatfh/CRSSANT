@@ -1,6 +1,6 @@
 # CRSSANT: Crosslinked RNA Secondary Structure Analysis using Network Techniques
 
-CRSSANT is an analysis pipeline for sequencing data produced using the PARIS assay described in [Lu et al., Cell 2016](https://www.sciencedirect.com/science/article/pii/S0092867416304226). CRSSANT automates the process of grouping sequencing reads into duplex groups (DGs), and tests the DGs to find potential secondary structures.
+CRSSANT is an analysis pipeline for sequencing data produced using the PARIS assay described in [Lu et al., Cell 2016](https://www.sciencedirect.com/science/article/pii/S0092867416304226). CRSSANT automates the process of grouping sequencing reads into duplex groups, and reports the potential stem structures that result from folding duplex groups using ViennaRNA's RNAfold software.
 
 
 ## Install
@@ -66,7 +66,9 @@ CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -c chimeric.sam output
 When specifying the `-c` flag, the `reads.sam` file is assumed to contain only normally-aligned reads. Using the `-c` flag will create and save a new SAM file with filename ending in `_chimeric.sam` containing an additional chiastic group (XG) field in the `reads.sam` file path. Aligned reads from `reads.sam` are added to the new file and tagged `XG:i:0`, while paired chimeric reads that do not have any reverse complement components are parsed and appended to the file with an `XG:i:1` tag. The CRSSANT analysis pipeline is then run on the new file.
 
 ### Outputs
-CRSSANT will produce the following 5 output files with these extensions added to the original file name:
+To understand the output files that CRSSANT produces, it is important to understand the analysis that CRSSANT performs. After DGs have been found, a 90th percentile rule is used to filter out reads that have one or both arms that are longer than the 90th percentile arm length, aggregated over all reads in a gene, and over both arms in a read. The remaining reads are referred to as stem groups, or SGs. SGs are piped into ViennaRNA's RNAfold software, and each SG is checked to see if it forms a valid stem structure.
+
+CRSSANT will produce the following 6 output files with these extensions added to the original file name:
 
 1. `_CRSSANT.log`: logfile recording which regions and genes were analyzed
 2. `_CRSSANT.sam`: SAM file containing reads that were successfully assigned to DGs, plus DG and non-overlapping group (NG) annotations
@@ -78,17 +80,22 @@ where `coverage` is defined as c / sqrt(a\*b) and
 * c = number of reads in a given DG
 * a = number of reads overlapping the left arm of the DG
 * b = number of reads overlapping the right arm of the DG
-4. `_CRSSANT.aux`: auxiliary file containing crosslinking and stem length information, and arm statistics for each DG. The file header contains the following columns:
+4. `_sg.aux`: auxiliary file containing crosslinking and stem length information, and arm statistics for SGs. Note that if a DG did not result in an SG due to 90th percentile filtering, or due to the SG not resulting in a valid structure, some of the following information is replaced with null information. The file header contains the following columns:
 ```
-DG_coverage    UU_cl,UC_cl,stem_length L_start_min,L_start_max,L_start_std     L_stop_min,L_stop_max,L_stop_std        R_start_min,R_start_max,R_start_std     R_stop_min,R_stop_max,R_stop_std
+DG_coverage    num_reads     UU_cl,UC_cl,stem_length    L_start_min,L_start_max,L_start_std     L_stop_min,L_stop_max,L_stop_std        R_start_min,R_start_max,R_start_std     R_stop_min,R_stop_max,R_stop_std
 ```
 where
-* `UU_cl` and `UC_cl` are the number of staggered uridine and uridine-cytosine base pairs, respectively, in the stem structure formed by the DG
-* `stem_length` is the length of the stem structure formed by the DG. If `stem_length` is zero, then that DG did not form a valid stem structure as determined using the ViennaRNA MFE RNA folding software
-* `_min`, `_max`, `_std` are the minimum arm index, maximum arm index, and standard deviation of all start or stop indices that make up the DG arm
-5. `_CRSSANT_bp.bed`: BED file containing basepairs for only the structurally valid DGs. The file header contains the following columns:
+* `num_reads` is the number of reads in the SG, i.e. the number of reads in the DG that passed 90th percentile filtering
+* `UU_cl` and `UC_cl` are the number of staggered uridine and uridine-cytosine base pairs, respectively, in the SG structure
+* `stem_length` is the length of SG structure
+* `_min`, `_max`, `_std` are the minimum arm index, maximum arm index, and standard deviation of all start and stop indices of the SG arms
+5. `_sg_arc.bed`: BED file containing arcs for all SGs. Arcs are drawn between The file header contains the following columns:
 ```
-region    DG start    DG stop     DG    1    +    DG start    DG stop     0,0,0
+region    SG start    SG stop     SG    1    +    SG start    SG stop     0,0,0
+```
+6. `_sg_bp.bed`: BED file containing basepairs only for SGs that form valid stem structures. The file header contains the following columns:
+```
+region    SG start    SG stop     DG    1    +    SG start    SG stop     0,0,0
 ```
 
 ### Help
