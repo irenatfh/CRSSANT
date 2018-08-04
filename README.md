@@ -82,9 +82,10 @@ where `coverage` is defined as c / sqrt(a\*b) and
 * b = number of reads overlapping the right arm of the DG
 4. `_sg.aux`: auxiliary file containing crosslinking and stem length information, and arm statistics for SGs. Note that if a DG did not result in an SG due to 90th percentile filtering, or due to the SG not resulting in a valid structure, some of the following information is replaced with null information. The file header contains the following columns:
 ```
-DG_coverage    UU_cl,UC_cl,stem_length     num_reads_in_SG    L_start_min,L_start_max,L_start_std     L_stop_min,L_stop_max,L_stop_std        R_start_min,R_start_max,R_start_std     R_stop_min,R_stop_max,R_stop_std
+DG_coverage    num_reads     UU_cl,UC_cl,stem_length    L_start_min,L_start_max,L_start_std     L_stop_min,L_stop_max,L_stop_std        R_start_min,R_start_max,R_start_std     R_stop_min,R_stop_max,R_stop_std
 ```
 where
+* `num_reads` is the number of reads in the SG, i.e. the number of reads in the DG that passed 90th percentile filtering
 * `UU_cl` and `UC_cl` are the number of staggered uridine and uridine-cytosine base pairs, respectively, in the SG structure
 * `stem_length` is the length of SG structure
 * `_min`, `_max`, `_std` are the minimum arm index, maximum arm index, and standard deviation of all start and stop indices of the SG arms
