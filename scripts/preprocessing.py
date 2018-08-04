@@ -14,7 +14,7 @@ import subfunctions as sf
 
 
 def combine_aligned_and_chimeric_reads(
-    reads, reads_chimeric,READS_JUNCTION=None
+    reads, reads_chimeric
 ):
     """
     Function to combine files of aligned and chimeric reads
@@ -45,15 +45,6 @@ def combine_aligned_and_chimeric_reads(
                 f.write(line.strip() + '\tXG:i:0\n')
             else:
                 f.write(line)
-                
-                
-    junction_list = []
-    if READS_JUNCTION:
-         with open(READS_JUNCTION, 'r') as f_junction:
-                for line in f_junction:
-                    data = line.rstrip().split('\t')
-                    read_id = data[9]
-                    junction_list.append(read_id)
 
 
     chimeric_dict = {}
@@ -63,10 +54,9 @@ def combine_aligned_and_chimeric_reads(
                 data = line.rstrip().split('\t')
                 read_id = data[0]
                 read_flag = int(data[1])
-                if read_id not in junction_list:
-                    if read_id not in chimeric_dict:
-                        chimeric_dict[read_id] = {}
-                    chimeric_dict[read_id][read_flag] = data[2:]
+                if read_id not in chimeric_dict:
+                    chimeric_dict[read_id] = {}
+                chimeric_dict[read_id][read_flag] = data[2:]
     paired_ids = []
     for (read_id, read_dict) in chimeric_dict.items():
         if len(read_dict) == 2:
@@ -264,6 +254,33 @@ def parse_reads(reads_file, ref_dict):
     return reads_dict
 
 
+def filter_gene_reads(gene_ids, reads_dict):
+    """
+    Function to filter out duplicate reads
+    
+    Duplicate reads have the exact same start and stop indices in both arms
+    
+    Parameters
+    ----------
+    gene_ids : list
+        List of read IDs in the gene of interest
+    reads_dict : dict
+        Dictionary of read information
+    """
+    gene_inds = np.array(
+        [reads_dict[read_id][:4] for read_id in gene_ids]
+    )
+    filtered_ids = []
+    for read_id in gene_ids:
+        read_inds = reads_dict[read_id][:4]
+        equal_list = [
+            np.array_equal(read_inds, other_inds) for other_inds in gene_inds
+        ]
+        if sum(equal_list) == 1:
+            filtered_ids.append(read_id)
+    return filtered_ids
+        
+            
 def init_outputs(in_sam, out_sam, out_info, out_dg_arcs, out_dg_bps, out_aux):
     """
     Function to initialize output files
@@ -493,4 +510,3 @@ def get_gs_dict(gs_bed, ref_dict, analysis_dict):
                 gs_dict[i]['region'] = region
                 gs_dict[i]['gene'] = gene
     return gs_dict
-###############################################################################

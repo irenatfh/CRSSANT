@@ -110,105 +110,36 @@ def get_overlap_ratios(inds_1, inds_2):
     return ratio_l, ratio_r
 
 
-def fold_optimize_stem(stem_inds, ref_seq):
+def fold_stem(l_seq, r_seq):
     """
-    Function to fold and optimize an RNA stem using RNAfold
-    
-    Results in the minimum free energy structure and energy of the folded stem, 
-    and attempts folding optimization by truncating the stem, if possible.
+    Function to fold an RNA stem using RNAfold with constraints
 
     Parameters
     ----------
-    stem_inds : np array
-        Stem arm indices
-    ref_seq : str
-        Reference sequence
-        
-    Returns
-    -------
-    folded_stem_inds, fc, mfe : list, str, float
-    """
-    folded_stem_inds = np.copy(stem_inds)
-    seq_l = ref_seq[stem_inds[0] : stem_inds[1] + 1]
-    seq_r = ref_seq[stem_inds[2] : stem_inds[3] + 1]
-    cut_point = len(seq_l)
-    seq = seq_l + seq_r
-    # Attempt folding
-    res = RNA.fold_compound(seq_l + '&' + seq_r)
-    [fc, mfe] = res.mfe_dimer()
-    l_symbols = [i for i in fc[ : cut_point] if i != '.']
-    r_symbols = [i for i in fc[cut_point : ] if i != '.']
-    # Check for fatal helix folding results
-    if (len(l_symbols) < 2 or len(r_symbols) < 2) or \
-       (set(l_symbols) != set('(') or set(r_symbols) != set(')')):
-        folded_stem_inds = np.zeros(4)
-        fc = '.' * len(seq)
-        mfe = 0.0
-    else:
-        # Check for folding results that might be fixable by truncation
-        if set(fc[:cut_point]).issubset(set('.(')) is False:
-            off_inds = [i for i in range(cut_point) if fc[i] == ')']
-            seq_l = seq_l[off_inds[-1] + 1 : ]
-            folded_stem_inds[0] += off_inds[-1] + 1
-        if set(fc[cut_point:]).issubset(set('.)')) is False:
-            off_inds = [i for i in range(len(seq_r)) if 
-                        fc[cut_point : ][i] == '(']
-            seq_r = seq_r[ : off_inds[0]]
-            folded_stem_inds[3] = folded_stem_inds[2] + off_inds[0] - 1
-        # Re-attempt helix folding/fold helix again if no truncation
-        cut_point = len(seq_l)
-        seq = seq_l + seq_r
-        res = RNA.fold_compound(seq_l + '&' + seq_r)
-        [fc, mfe] = res.mfe_dimer()
-        # Check if truncation was successful
-        l_symbols = [i for i in fc[ : cut_point] if i != '.']
-        r_symbols = [i for i in fc[cut_point :] if i != '.']
-        # If truncation was unsuccessful output null fc and mfe
-        if (len(l_symbols) < 2 or len(r_symbols) < 2) or \
-           (set(l_symbols) != set('(') or set(r_symbols) != set(')')):
-            folded_stem_inds = np.zeros(4)
-            fc = '.' * len(seq)
-            mfe = 0.0
-    return folded_stem_inds, fc, mfe
-
-
-def fold_stem(seq_l, seq_r):
-    """
-    Function to fold an RNA stem using RNAfold
-    
-    This function simply attempts folding given left and right stem sequences.
-
-    Parameters
-    ----------
-    seq_l : np array
+    l_seq : np array
         Stem left arm sequence
-    seq_r : str
+    r_seq : str
         Stem right arm sequence
 
     Returns
     -------
     fc, mfe : str, float
     """
-    cut_point = len(seq_l)
-    fc, mfe = RNA.fold_compound(seq_l + '&' + seq_r).mfe_dimer()
-    fc_l = [i for i in fc[ : cut_point] if i != '.']
-    fc_r = [i for i in fc[cut_point : ] if i != '.']
-    if (len(fc_l) < 2 or len(fc_r) < 2) or \
-    (set(fc_l) != set('(') or set(fc_r) != set(')')):
-        fc = '.' * len(fc)
-        mfe = 0.0
+    fc = RNA.fold_compound(l_seq + r_seq)
+    fc.hc_add_from_db('<'*len(l_seq) + '>'*len(r_seq))
+    fc, mfe = fc.pf()
     return fc, mfe
 
 
-def shuffle_stem(seq_l, seq_r, n):
+def shuffle_stem(l_seq, r_seq, n):
     """
     Function to shuffle a stem up to n times
 
     Parameters
     ----------
-    seq_l : np array
+    l_seq : np array
         Stem left arm sequence
-    seq_r : str
+    r_seq : str
         Stem right arm sequence
     n : int
         Number of shifts
@@ -220,14 +151,14 @@ def shuffle_stem(seq_l, seq_r, n):
     seqs_shuffled = set()
     mfes_shuffled = []
     loop = 0
-    while (len(seqs_shuffled) < n) and (loop < math.factorial(len(seq_l))**2):
-        seq = seq_l + seq_r
+    while (len(seqs_shuffled) < n) and (loop < math.factorial(len(l_seq))**2):
+        seq = l_seq + r_seq
         if seq not in seqs_shuffled:
             seqs_shuffled.add(seq)
-            fc, mfe = fold_stem(seq_l, seq_r)
+            fc, mfe = fold_stem(l_seq, r_seq)
             mfes_shuffled.append(mfe)
-        seq_l = ushuffle.shuffle(seq_l, len(seq_l), 2)
-        seq_r = ushuffle.shuffle(seq_r, len(seq_r), 2)
+        l_seq = ushuffle.shuffle(l_seq, len(l_seq), 2)
+        r_seq = ushuffle.shuffle(r_seq, len(r_seq), 2)
         loop += 1
     mfes_shuffled = sorted(mfes_shuffled)[::-1]  # sort from worst to best MFE
     return mfes_shuffled
@@ -287,8 +218,14 @@ def get_stem_info(inds, fc, ref_seq):
     -------
     crosslinks, basepairs : list, list
     """
-    inds_l = [(i + inds[0]) for i in range(len(fc)) if fc[i] == '(' ]
-    inds_r = [(inds[3] - i) for i in range(len(fc)) if fc[::-1][i] == ')']
+    inds_l = [
+        (i + inds[0]) for i in range(len(fc)) 
+        if fc[i] == '(' or fc[i] == '}'
+    ]
+    inds_r = [
+        (inds[3] - i) for i in range(len(fc)) 
+        if fc[::-1][i] == ')' or fc[::-1][i] == '}'
+    ]
     inds_r = inds_r[::-1]
     
     

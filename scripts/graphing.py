@@ -15,6 +15,73 @@ import networkx as nx
 from sklearn.cluster import KMeans
 import scipy as sp
 import subfunctions as sf
+from collections import Counter
+
+
+def get_weights(read_ids, reads_dict, b_w=30):
+    """
+    Function to get read weights
+    
+    Reads are binned by the average arm positions of the right and left arms.
+    Weights are uniformly weighted across all bins, and are further uniformly 
+    weighted between all reads in a given bin.
+    
+    Parameters
+    ----------
+    read_ids : list
+        List of read IDs
+    reads_dict : dict
+        Dictionary of reads
+    b_w : int
+        Bin width
+
+    Returns
+    -------
+    """
+    reads_avg_inds = np.array(
+        [
+            [
+                np.mean(reads_dict[read_id][0:2]),
+                np.mean(reads_dict[read_id][2:4])
+            ]
+            for read_id in read_ids
+        ]
+    )
+    [
+        min_l_avg_ind, max_l_avg_ind,
+        min_r_avg_ind, max_r_avg_ind 
+    ] = [
+        np.min(reads_avg_inds[:, 0]), np.max(reads_avg_inds[:, 0]),
+        np.min(reads_avg_inds[:, 1]), np.max(reads_avg_inds[:, 1])
+    ]
+    num_l_bins = np.floor((max_l_avg_ind - min_l_avg_ind) / b_w)
+    num_r_bins = np.floor((max_r_avg_ind - min_r_avg_ind) / b_w)
+    bins_counts_dict = {}
+    bin_id_list = []
+    for read_avg_inds in reads_avg_inds:
+        l_bin = np.min(
+            [
+                np.floor((read_avg_inds[0] - min_l_avg_ind) / b_w), 
+                num_l_bins - 1
+            ]
+        )
+        r_bin = np.min(
+            [
+                np.floor((read_avg_inds[1] - min_r_avg_ind) / b_w), 
+                num_r_bins - 1
+            ]
+        )
+        bin_id = int((r_bin * num_l_bins) + l_bin)
+        bin_id_list.append(bin_id)
+        if bin_id not in bins_counts_dict.keys():
+            bins_counts_dict[bin_id] = 0
+        bins_counts_dict[bin_id] += 1 
+    base_prob = 1 / len(bins_counts_dict)
+    read_weights = [
+        base_prob * (1 / bins_counts_dict[bin_id])
+        for bin_id in bin_id_list
+    ]
+    return read_weights
 
 
 def graph_reads(gene_ids, reads_dict, t=0.3):

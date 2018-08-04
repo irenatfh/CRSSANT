@@ -74,13 +74,10 @@ def add_reads_to_dg(dg_reads_dict, reads_ids, reads_dict, dg_ind, t=0.3):
         read_inds = reads_dict[read_id][:4]
         dg_overlaps = {}
         for (dg, dg_reads) in dg_reads_dict.items():
-            dg_inds_all = np.array(
-                [reads_dict[dg_read][:4] for dg_read in dg_reads]
+            dg_reads_inds = np.array(
+                [reads_dict[read_id][:4] for read_id in dg_reads]
             )
-            dg_inds = [
-                min(dg_inds_all[:,0]), max(dg_inds_all[:,1]),
-                min(dg_inds_all[:,2]), max(dg_inds_all[:,3])
-            ]
+            dg_inds = np.median(dg_inds_all, axis=0)
             ratio_l, ratio_r = sf.get_overlap_ratios(read_inds, dg_inds)
             if (ratio_l > t) and (ratio_r > t):
                 dg_overlaps[dg] = ratio_l + ratio_r
@@ -107,12 +104,10 @@ def filter_dgs(dg_reads_dict):
     Function to filter out invalid DGs
     
     DGs with fewer than two reads are eliminated.
-
     Parameters
     ----------
     dg_reads_dict : dict
         Dictionary of DGs and their reads
-
     Returns
     -------
     filtered_dict : dict
@@ -137,14 +132,12 @@ def create_dg_dict(dg_reads_dict, reads_dict, ng_ind):
         + c = number of reads in a given DG
         + a = number of reads overlapping the left arm of the DG
         + b = number of reads overlapping the right arm of the DG
-
     Parameters
     ----------
     dg_reads_dict : dict
         Dictionary of DGs and their reads
     reads_dict : dict
         Dictionary of reads
-
     Returns
     -------
     dg_dict : dict
@@ -155,13 +148,10 @@ def create_dg_dict(dg_reads_dict, reads_dict, ng_ind):
     for (dg, dg_reads) in dg_reads_dict.items():
         dg_min = min([reads_dict[i][0] for i in dg_reads])
         dg_max = max([reads_dict[i][3] for i in dg_reads])
-        dg_inds_all = np.array(
+        dg_reads_inds = np.array(
             [reads_dict[dg_read][:4] for dg_read in dg_reads]
         )
-        dg_inds = [
-            min(dg_inds_all[:,0]), max(dg_inds_all[:,1]),
-            min(dg_inds_all[:,2]), max(dg_inds_all[:,3])
-        ]
+        dg_inds = np.median(dg_reads_inds, axis=0)
         overlapping_l = 0
         overlapping_r = 0
         

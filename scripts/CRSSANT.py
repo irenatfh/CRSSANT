@@ -18,7 +18,7 @@ import datetime
 import numpy as np
 from itertools import chain
 import preprocessing as pp, graphing as gp, dg_analysis as da, \
-structure_discovery as sd, output as op
+stem_discovery as sd, output as op
 
 
 # Global variables
@@ -26,6 +26,7 @@ max_reads = 2000
 min_overlap = 0.4
 tests = 100
 min_rank = 0.75
+bin_width = 30
 
 
 class ReadsFiles(object):
@@ -36,9 +37,9 @@ class ReadsFiles(object):
                     region_gene_str
         self.out_sam = out + self.name + '.sam'
         self.out_info = out + self.name + '_info.bed'
-        self.out_dg_arcs = out + self.name + '_dg_arcs.bed'
-        self.out_dg_bps = out + self.name + '_dg_bps.bed'
-        self.out_aux = out + self.name + '.aux'
+        self.out_sg_arcs = out + self.name + '_sg_arcs.bed'
+        self.out_sg_bps = out + self.name + '_sg_bps.bed'
+        self.out_sg_aux = out + self.name + '.aux'
         self.log = out + self.name + '.log'
         
     
@@ -60,8 +61,6 @@ def parse_args():
                         'sequence (BED)')
     parser.add_argument('-c', '--chimeric', 
                         help='Path to chimeric PARIS reads file (SAM)')
-    parser.add_argument('-j', '--junction', 
-                        help='Path to junction PARIS reads file (JUNCTION)')
     parser.add_argument('-r', '--regions', 
                         help='Genomic regions of interest (separated only by '
                         'commas, should match naming system in reference)')
@@ -102,18 +101,10 @@ def main():
         region_gene_str = 'r%s_g%s' %(
             ''.join(args.regions), ''.join(args.genes)
         )
-    if args.junction and not args.chimeric:
-        print('.JUNCTION file must be accompanied by chimeric reads file')
-        sys.exit()
     if args.chimeric:
-        if args.junction:
-            args.reads = pp.combine_aligned_and_chimeric_reads(
-                args.reads, args.chimeric, args.junction
-            )
-        else:
-            args.reads = pp.combine_aligned_and_chimeric_reads(
-                args.reads, args.chimeric
-            )
+        args.reads = pp.combine_aligned_and_chimeric_reads(
+            args.reads, args.chimeric
+        )
 
 
     # Parse analysis dictionary and reads
@@ -124,8 +115,8 @@ def main():
     # Initialize output files
     files = ReadsFiles(args.reads, args.out, region_gene_str)
     pp.init_outputs(
-        args.reads, files.out_sam, files.out_info, files.out_dg_arcs, 
-        files.out_dg_bps, files.out_aux
+        args.reads, files.out_sam, files.out_info, files.out_sg_arcs, 
+        files.out_sg_bps, files.out_sg_aux
     )
     
     
@@ -144,6 +135,7 @@ def main():
                     if (read_info[4] == region) & (read_info[5] == gene) 
                     & (read_info[6] == gene)
                 ]
+                gene_ids = pp.filter_gene_reads(gene_ids, reads_dict)
                 log.write(
                     'Analyzing %s reads spanning gene %s\n' 
                     %(len(gene_ids), gene)
@@ -152,17 +144,19 @@ def main():
                     
                     
                     # Analyze reads to obtain DGs
+                    weights = gp.get_weights(
+                        gene_ids, reads_dict, b_w=bin_width
+                    )
                     if len(gene_ids) > max_reads:
                         inds_samp = np.random.choice(
-                            len(gene_ids), max_reads, replace=False
-                        )
-                        graph = gp.graph_reads(
-                            [gene_ids[ind] for ind in inds_samp], 
-                            reads_dict, t=min_overlap
+                            len(gene_ids), max_reads, replace=False,
+                            p=weights
                         )
                     else:
-                        graph = gp.graph_reads(
-                            gene_ids, reads_dict, t=min_overlap
+                        inds_samp = range(len(gene_ids))
+                    graph = gp.graph_reads(
+                            [gene_ids[ind] for ind in inds_samp], 
+                            reads_dict, t=min_overlap
                         )
                     reads_dg_dict, dg_ind = gp.cluster_graph(graph, dg_ind)
                     dg_reads_dict = da.get_preliminary_dgs(
@@ -191,22 +185,20 @@ def main():
                     )
     
     
-                    # Analyze DGs to discover new secondary structures
-                    stem_dict = sd.get_stem_dict(dg_dict, region_seq)
-                    op.write_aux(
-                        files.out_aux, dg_dict, dg_reads_dict, reads_dict, 
-                        stem_dict
+                    # Refine reads to get stem group (SG) dict
+                    sg_reads_dict = sd.dg_to_sg_dict(
+                        dg_filtered_dict, reads_dict)
+                    sg_dict = sd.create_sg_dict(
+                        sg_reads_dict, reads_dict, region_seq
                     )
-                    op.write_dg_arcs(files.out_dg_arcs, dg_dict, region)
-                
-                
-                    # Attempt DG folding and write remaining output files
-                    stem_dict = sd.get_stem_dict(dg_dict, region_seq)
+
+                    # Write remaining output files
                     op.write_aux(
-                        files.out_aux, dg_dict, dg_reads_dict, reads_dict, 
-                        stem_dict
+                        files.out_sg_aux, sg_dict, sg_reads_dict, dg_dict,
+                        reads_dict, 
                     )
-                    op.write_dg_bps(files.out_dg_bps, stem_dict, region)
+                    op.write_sg_bps(files.out_sg_bps, sg_dict, region)
+                    op.write_sg_arcs(files.out_sg_arcs, dg_dict, region)
                 gene_stop = datetime.datetime.now()
                 log.write('Gene analysis time: %s\n' %(gene_stop - gene_start))
         stop = datetime.datetime.now()

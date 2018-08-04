@@ -52,7 +52,7 @@ def write_dg_ng_sam(reads_file, rna_file, dg_reads_dict, dg_dict):
 
 
 def write_aux(
-    aux_file, dg_dict, dg_reads_dict, reads_dict, stem_dict):
+    aux_file, sg_dict, sg_reads_dict, dg_dict, reads_dict):
     with open(aux_file, 'a') as f:
         for (dg, dg_info) in dg_dict.items():
             coverage = dg_info['coverage']
@@ -60,9 +60,10 @@ def write_aux(
             
             
             # Add crosslinking, stem length and structure pass
-            if dg in stem_dict:
-                crosslinks = stem_dict[dg]['crosslinks']
-                basepairs = stem_dict[dg]['basepairs']
+            if dg in sg_dict.keys():
+                sg_info = sg_dict[dg]
+                crosslinks = sg_info['crosslinks']
+                basepairs = sg_info['basepairs']
                 crosslinks_str = [str(i) for i in crosslinks]
                 basepairs_str = [str(len(basepairs[0]))]
                 crosslinks_basepairs_str = ','.join(
@@ -74,48 +75,52 @@ def write_aux(
             
             
             # Add read edge statistics
-            dg_reads_list = dg_reads_dict[dg]
-            dg_reads_inds = np.array(
-                [reads_dict[i][0:4] for i in dg_reads_list]
-            )
-            for i in range(4):
-                edge_inds = dg_reads_inds[:,i] + 1  # biology is 1-indexed
-                edge_min = str(np.min(edge_inds))
-                edge_max = str(np.max(edge_inds))
-                edge_sd = str(np.std(edge_inds))
-                edge_str = ','.join([edge_min, edge_max, edge_sd])
-                line.append(edge_str)
+            if dg in sg_dict.keys():
+                sg_reads_list = sg_reads_dict[dg]
+                sg_reads_inds = np.array(
+                    [reads_dict[i][0:4] for i in sg_reads_list]
+                )
+                for i in range(4):
+                    edge_inds = sg_reads_inds[:,i] + 1  # biology is 1-indexed
+                    edge_min = str(np.min(edge_inds))
+                    edge_max = str(np.max(edge_inds))
+                    edge_sd = str(np.std(edge_inds))
+                    edge_str = ','.join([edge_min, edge_max, edge_sd])
+                    line.append(edge_str)
+            else:
+                line = ['0,0,0']*4
             f.write('\t'.join(line) + '\n')
+            
     return
 
 
-def write_dg_arcs(bed_file, dg_dict, region):
+def write_sg_arcs(bed_file, sg_dict, region):
     with open(bed_file, 'a') as f:
-        for (dg, dg_info) in dg_dict.items():
-            dg_inds = dg_info['arm_inds']
+        for (sg, sg_info) in sg_dict.items():
+            sg_inds = sg_info['arm_inds']
             line = [
                 region, 
-                str(int(np.median(dg_inds[:2])) + 1),  # biology is 1-indexed
-                str(int(np.median(dg_inds[2:])) + 1),
-                str(dg), '1','+', 
-                str(int(np.median(dg_inds[:2])) + 1),
-                str(int(np.median(dg_inds[2:])) + 1),
+                str(int(np.median(sg_inds[:2])) + 1),  # biology is 1-indexed
+                str(int(np.median(sg_inds[2:])) + 1),
+                str(sg), '1','+', 
+                str(int(np.median(sg_inds[:2])) + 1),
+                str(int(np.median(sg_inds[2:])) + 1),
                 '0,0,0'
             ]
             f.write('\t'.join(line) + '\n')      
     return
 
 
-def write_dg_bps(bed_file, stem_dict, region):
+def write_sg_bps(bed_file, sg_dict, region):
     with open(bed_file, 'a') as f:
-        for (stem, stem_info) in stem_dict.items():
-            l_bp, r_bp = stem_info['basepairs']
+        for (sg, sg_info) in sg_dict.items():
+            l_bp, r_bp = sg_info['basepairs']
             for (l_ind, r_ind) in zip(l_bp, r_bp):
                 line = [
                     region, 
                     str(l_ind + 1),  # biology is 1-indexed
                     str(r_ind + 1), 
-                    str(stem), '1','+', 
+                    str(sg), '1','+', 
                     str(l_ind), 
                     str(r_ind), 
                     '0,0,0'
