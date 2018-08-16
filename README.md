@@ -15,7 +15,11 @@ Navigate to the release page, right click on the source code, and save it to the
 * [ViennaRNA v2.4.7+](https://www.tbi.univie.ac.at/RNA/)
 * [ushuffle v1.2.2+](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-9-192)
 * [NetworkX v2.1+](https://networkx.github.io/)
-as well as typical packages like numpy, scikit-learn, and scipy. We recommend downloading the latest versions of these packages using the Ananconda/Bioconda package manager.
+
+as well as typical packages like numpy, scikit-learn, and scipy. We recommend downloading the latest versions of these packages using the Ananconda/Bioconda package manager using the following commands:
+* [ViennaRNA](https://anaconda.org/bioconda/viennarna): `conda install -c bioconda viennarna`
+* [ushuffle](https://anaconda.org/bioconda/ushuffle): `conda install -c bioconda ushuffle`
+* [Networkx](https://anaconda.org/anaconda/networkx): `conda install -c anaconda networkx`
 
 ## Run
 
