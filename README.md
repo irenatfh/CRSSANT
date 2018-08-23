@@ -16,7 +16,7 @@ Navigate to the release page, right click on the source code, and save it to the
 * [NetworkX v2.1+](https://networkx.github.io/) ([Anaconda Cloud link](https://anaconda.org/anaconda/networkx))
 * [NumPy](http://www.numpy.org/) ([Anaconda Cloud link](https://anaconda.org/anaconda/numpy))
 * [scikit-learn](http://scikit-learn.org/stable/) ([Anaconda Cloud link](https://anaconda.org/anaconda/scikit-learn))
-* [SciPy] ([Anaconda Cloud link](https://anaconda.org/anaconda/scipy))
+* [SciPy](https://www.scipy.org/) ([Anaconda Cloud link](https://anaconda.org/anaconda/scipy))
 
 ## Run
 
