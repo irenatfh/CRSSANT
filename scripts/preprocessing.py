@@ -218,8 +218,11 @@ def parse_reads(reads_file, ref_dict):
         Dictionary of read information
         {read ID:[L start, L stop, R start, R stop, 
                   region, L arm gene, R arm gene]}
+    regions_genes_dict : dict
+        Dictionary of set of (l_gene, r_gene) tuples for each region
     """
     reads_dict = {}
+    regions_genes_dict = {}
     with open(reads_file, 'r') as f:
         for line in f:
             if line[0] != '@':
@@ -251,7 +254,11 @@ def parse_reads(reads_file, ref_dict):
                                 l_pos_start, l_pos_stop, r_pos_start, 
                                 r_pos_stop, region, l_gene, r_gene
                             ]
-    return reads_dict
+                            if region not in regions_genes_dict:
+                                regions_genes_dict[region] = {(l_gene, r_gene)}
+                            else:
+                                regions_genes_dict[region].add((l_gene, r_gene))
+    return reads_dict, regions_genes_dict
 
 
 def filter_gene_reads(gene_ids, reads_dict):
@@ -270,18 +277,17 @@ def filter_gene_reads(gene_ids, reads_dict):
     gene_inds = np.array(
         [reads_dict[read_id][:4] for read_id in gene_ids]
     )
-    filtered_ids = []
-    for read_id in gene_ids:
-        read_inds = reads_dict[read_id][:4]
-        equal_list = [
-            np.array_equal(read_inds, other_inds) for other_inds in gene_inds
-        ]
-        if sum(equal_list) == 1:
-            filtered_ids.append(read_id)
+    inds_unique, indices_unique = np.unique(
+        gene_inds, axis=0, return_index=True
+    )
+    filtered_ids = [gene_ids[i] for i in indices_unique]
     return filtered_ids
         
             
-def init_outputs(in_sam, out_sam, out_info, out_dg_arcs, out_dg_bps, out_aux):
+def init_outputs(
+    in_sam, out_sam,
+    out_dg, out_sg_arc, out_sg_bp, out_sg
+):
     """
     Function to initialize output files
 
@@ -291,14 +297,10 @@ def init_outputs(in_sam, out_sam, out_info, out_dg_arcs, out_dg_bps, out_aux):
         Path to input reads file (SAM)
     out_sam : str
         Path to output reads file (SAM)
-    out_info : str
-        Path to output info file (BED)
-    out_dg_arcs : str
-        Path to output arcs file (BED)
-    out_dg_bps : str
-        Path to output basepairing file (BED)
-    out_aux : str
-        Path to output auxiliary file (AUX)
+    out_dg : str
+    out_sg_arc : str
+    out_sg_bp : str
+    out_sg : str
 
     Returns
     -------
@@ -309,19 +311,19 @@ def init_outputs(in_sam, out_sam, out_info, out_dg_arcs, out_dg_bps, out_aux):
                 f_w.write(line)
             
             
-    with open(out_info, 'w') as f:
+    with open(out_dg, 'w') as f:
         pass
     
     
-    with open(out_dg_arcs, 'w') as f:
+    with open(out_sg_arc, 'w') as f:
         f.write('track graphType=arc itemRgb=on\n')
         
         
-    with open(out_dg_bps, 'w') as f:
+    with open(out_sg_bp, 'w') as f:
         f.write('track graphType=arc itemRgb=on\n')
         
         
-    with open(out_aux, 'w') as f:
+    with open(out_sg, 'w') as f:
         header = [
             'DG_coverage', 'num_reads', 'UU_cl,UC_cl,stem_length',
             'L_start_min,L_start_max,L_start_std', 

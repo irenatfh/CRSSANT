@@ -37,6 +37,7 @@ def get_weights(read_ids, reads_dict, b_w=30):
 
     Returns
     -------
+    read_weights : list
     """
     reads_avg_inds = np.array(
         [

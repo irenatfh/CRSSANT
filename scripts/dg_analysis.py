@@ -77,7 +77,7 @@ def add_reads_to_dg(dg_reads_dict, reads_ids, reads_dict, dg_ind, t=0.3):
             dg_reads_inds = np.array(
                 [reads_dict[read_id][:4] for read_id in dg_reads]
             )
-            dg_inds = np.median(dg_inds_all, axis=0)
+            dg_inds = np.median(dg_reads_inds, axis=0)
             ratio_l, ratio_r = sf.get_overlap_ratios(read_inds, dg_inds)
             if (ratio_l > t) and (ratio_r > t):
                 dg_overlaps[dg] = ratio_l + ratio_r
@@ -151,7 +151,7 @@ def create_dg_dict(dg_reads_dict, reads_dict, ng_ind):
         dg_reads_inds = np.array(
             [reads_dict[dg_read][:4] for dg_read in dg_reads]
         )
-        dg_inds = np.median(dg_reads_inds, axis=0)
+        dg_inds = [int(i) for i in np.median(dg_reads_inds, axis=0)]
         overlapping_l = 0
         overlapping_r = 0
         
