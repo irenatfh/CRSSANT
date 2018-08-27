@@ -117,10 +117,6 @@ def main():
                 args.reads, args.chimeric
             )
             chimeric_stop = datetime.datetime.now()
-            print(
-                'Chimeric read combination time: %s\n\n' \
-                %(chimeric_stop - chimeric_start)
-            )
             log.write(
                 'Chimeric read combination time: %s\n\n' \
                 %(chimeric_stop - chimeric_start)
@@ -136,7 +132,6 @@ def main():
         )
         reads_dict, regions_genes_dict = pp.parse_reads(args.reads, ref_dict)
         prepare_stop = datetime.datetime.now()
-        print('Read preparation time: %s\n\n' %(prepare_stop - prepare_start))
         log.write(
             'Read preparation time: %s\n\n' %(prepare_stop - prepare_start)
         )
