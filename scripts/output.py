@@ -14,6 +14,28 @@ import numpy as np
 
 
 def write_dg_ng_sam(reads_file, rna_file, dg_reads_dict, dg_dict):
+    """
+    Function that writes the ouput SAM file
+    
+    SAM file includes only reads that contributed to DG groups, i.e. if DG had
+    only one read, that DG does not pass the DG filter and the read is not
+    written to the SAM file.
+    
+    Parameters
+    ----------
+    reads_file : str
+        Path to original SAM file
+    rna_file : str
+        Path to new SAM file
+    dg_reads_dict : dict
+        Dictionary of DG and reads
+    dg_dict : dict
+        Dictionary of DG metadata, including DG and NG
+    
+    Returns
+    -------
+    appends to output file
+    """
     with open(reads_file, 'r') as f_read, \
          open(rna_file, 'a') as f:
         for line in f_read:

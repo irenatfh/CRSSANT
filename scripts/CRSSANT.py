@@ -94,19 +94,13 @@ def main():
             )
         )
     else:
-        args.regions = args.regions.split(',')
-        args.genes = args.genes.split(',')
         region_gene_str = 'r%s_g%s' %(
             ''.join(args.regions), ''.join(args.genes)
         )
-    if args.chimeric:
-        print('Combining aligned and chimeric reads')
-        log.write('Combining aligned and chimeric reads')
-        args.reads = pp.combine_aligned_and_chimeric_reads(
-            args.reads, args.chimeric
-        )
+        args.regions = args.regions.split(',')
+        args.genes = args.genes.split(',')
     
-
+    
     # Initialize output files
     files = ReadsFiles(args.reads, args.out, region_gene_str)
     pp.init_outputs(
@@ -114,13 +108,38 @@ def main():
         files.out_dg, files.out_sg_arc, files.out_sg_bp, files.out_sg
     )
     
-
     with open(files.log, 'w') as log:
+        if args.chimeric:
+            print('Combining aligned and chimeric reads\n')
+            log.write('Combining aligned and chimeric reads\n')
+            chimeric_start = datetime.datetime.now()
+            args.reads = pp.combine_aligned_and_chimeric_reads(
+                args.reads, args.chimeric
+            )
+            chimeric_stop = datetime.datetime.now()
+            print(
+                'Chimeric read combination time: %s\n\n' \
+                %(chimeric_stop - chimeric_start)
+            )
+            log.write(
+                'Chimeric read combination time: %s\n\n' \
+                %(chimeric_stop - chimeric_start)
+            )
+    
+
         # Parse analysis dictionary and reads
-        print('Preparing reads for analysis')
-        log.write('Preparing reads for analysis')
-        analysis_dict = pp.get_analysis_dict(ref_dict, args.regions, args.genes)
+        print('Preparing reads for analysis\n')
+        log.write('Preparing reads for analysis\n')
+        prepare_start = datetime.datetime.now()
+        analysis_dict = pp.get_analysis_dict(
+            ref_dict, args.regions, args.genes
+        )
         reads_dict, regions_genes_dict = pp.parse_reads(args.reads, ref_dict)
+        prepare_stop = datetime.datetime.now()
+        print('Read preparation time: %s\n\n' %(prepare_stop - prepare_start))
+        log.write(
+            'Read preparation time: %s\n\n' %(prepare_stop - prepare_start)
+        )
 
 
         # Run analysis pipeline
@@ -129,7 +148,8 @@ def main():
         for region in analysis_dict:
             region_seq = ref_dict[region]['sequence']
             for (l_gene, r_gene) in regions_genes_dict[region]:
-                if (l_gene in analysis_dict[region]) or (r_gene in analysis_dict[region]):
+                if (l_gene in analysis_dict[region]) or \
+                   (r_gene in analysis_dict[region]):
                     gene_start = datetime.datetime.now()
                     ng_ind = 0
                     gene_ids = [
@@ -179,6 +199,9 @@ def main():
                             reads_dict, reads_dg_dict
                         )
                         if len(gene_ids) > max_reads:
+                            
+                            
+                            # Add back in unsampled reads
                             inds_unsamp = np.setdiff1d(
                                 range(len(gene_ids)), inds_samp
                             )
@@ -192,26 +215,28 @@ def main():
                         dg_dict, ng_ind = da.create_dg_dict(
                             dg_filtered_dict, reads_dict, ng_ind
                         )
+                        if len(dg_filtered_dict) >= 1:
+                        
+                        
+                            # If there is a valid number of DGs, do SG discovery
+                            # Refine reads to get stem group (SG) dict
+                            sg_reads_dict = sd.dg_to_sg_dict(dg_filtered_dict, reads_dict)
+                            sg_dict = sd.create_sg_dict(sg_reads_dict, reads_dict, region_seq)
 
 
-                        # Refine reads to get stem group (SG) dict
-                        sg_reads_dict = sd.dg_to_sg_dict(dg_filtered_dict, reads_dict)
-                        sg_dict = sd.create_sg_dict(sg_reads_dict, reads_dict, region_seq)
+                            # Output SAM file
+                            op.write_dg_ng_sam(
+                                args.reads, files.out_sam, dg_reads_dict, dg_dict
+                            )
 
 
-                        # Output SAM file
-                        op.write_dg_ng_sam(
-                            args.reads, files.out_sam, dg_reads_dict, dg_dict
-                        )
-
-
-                        # Write remaining output files
-                        op.write_dg(files.out_dg, dg_dict, region)
-                        op.write_sg_arc(files.out_sg_arc, sg_dict, region)
-                        op.write_sg_bp(files.out_sg_bp, sg_dict, region)
-                        op.write_sg(
-                            files.out_sg, sg_dict, sg_reads_dict, dg_dict, reads_dict
-                        )
+                            # Write remaining output files
+                            op.write_dg(files.out_dg, dg_dict, region)
+                            op.write_sg_arc(files.out_sg_arc, sg_dict, region)
+                            op.write_sg_bp(files.out_sg_bp, sg_dict, region)
+                            op.write_sg(
+                                files.out_sg, sg_dict, sg_reads_dict, dg_dict, reads_dict
+                            )
                     gene_stop = datetime.datetime.now()
                     log.write('Gene analysis time: %s\n' %(gene_stop - gene_start))
         stop = datetime.datetime.now()
