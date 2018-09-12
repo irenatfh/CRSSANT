@@ -218,11 +218,11 @@ def parse_reads(reads_file, ref_dict):
         Dictionary of read information
         {read ID:[L start, L stop, R start, R stop, 
                   region, L arm gene, R arm gene]}
-    regions_genes_dict : dict
+    regions_readgenes_dict : dict
         Dictionary of set of (l_gene, r_gene) tuples for each region
     """
     reads_dict = {}
-    regions_genes_dict = {}
+    regions_readgenes_dict = {}
     with open(reads_file, 'r') as f:
         for line in f:
             if line[0] != '@':
@@ -254,11 +254,11 @@ def parse_reads(reads_file, ref_dict):
                                 l_pos_start, l_pos_stop, r_pos_start, 
                                 r_pos_stop, region, l_gene, r_gene
                             ]
-                            if region not in regions_genes_dict:
-                                regions_genes_dict[region] = {(l_gene, r_gene)}
+                            if region not in regions_readgenes_dict:
+                                regions_readgenes_dict[region] = {(l_gene, r_gene)}
                             else:
-                                regions_genes_dict[region].add((l_gene, r_gene))
-    return reads_dict, regions_genes_dict
+                                regions_readgenes_dict[region].add((l_gene, r_gene))
+    return reads_dict, regions_readgenes_dict
 
 
 def filter_gene_reads(gene_ids, reads_dict):
@@ -380,7 +380,7 @@ def get_regions(ref_dict, genes):
     return regions
         
 
-def get_analysis_dict(ref_dict, regions, genes):
+def get_regions_genes_dict(ref_dict, regions, genes):
     """
     Function to compose analysis regions and genes into a dict
 
@@ -395,19 +395,43 @@ def get_analysis_dict(ref_dict, regions, genes):
 
     Returns
     -------
-    analysis_dict : dict
+    regions_genes_dict : dict
     """
-    analysis_dict = {}
+    regions_genes_dict = {}
     for gene in genes:
         for region in ref_dict.keys():
             if gene in ref_dict[region]['genes'].keys():
-                if region not in analysis_dict.keys():
-                    analysis_dict[region] = []
-                analysis_dict[region].append(gene)
+                if region not in regions_genes_dict.keys():
+                    regions_genes_dict[region] = []
+                regions_genes_dict[region].append(gene)
                 continue
     for region in regions:
-        if region not in analysis_dict.keys():
-            analysis_dict[region] = list(ref_dict[region]['genes'].keys())
+        if region not in regions_genes_dict.keys():
+            regions_genes_dict[region] = list(ref_dict[region]['genes'].keys())
+    return regions_genes_dict
+
+
+def get_analysis_dict(regions_genes_dict, regions_readgenes_dict):
+    """
+    Function to create analysis dictionary
+    
+    Parameters
+    ----------
+    regions_genes_dict : dict
+        Dictionary of regions and genes specified by user
+    regions_readgenes_dict : dict
+        Dictionary of regions and genes present in reads
+        
+    Returns
+    -------
+    analysis_dict : dict
+    """
+    analysis_dict = {}
+    for (region, genes_tuples) in regions_readgenes_dict.items():
+        for (l_gene, r_gene) in genes_tuples:
+            if (l_gene in regions_genes_dict[region]) or \
+               (r_gene in regions_genes_dict[region]):
+                analysis_dict[(l_gene, r_gene)] = region
     return analysis_dict
 
 
@@ -447,7 +471,7 @@ def get_dg_dict(dg_bed):
     return dg_dict
 
 
-def get_gs_dict(gs_bed, ref_dict, analysis_dict):
+def get_gs_dict(gs_bed, ref_dict, regions_genes_dict):
     """
     Function to create dictionary of gold standard structures
     
@@ -457,7 +481,7 @@ def get_gs_dict(gs_bed, ref_dict, analysis_dict):
         Path to gold standard structures file (BED)
     ref_dict : dict
         Reference dictionary
-    analysis_dict : dict
+    regions_genes_dict : dict
         Analysis dictionary
     
     Returns
@@ -503,8 +527,8 @@ def get_gs_dict(gs_bed, ref_dict, analysis_dict):
         )
         stem_inds = np.array([l_stem[0], l_stem[-1], r_stem[0], r_stem[-1]])
         region = regions[stem_start]
-        if region in analysis_dict:
-            genes = analysis_dict[region]
+        if region in regions_genes_dict:
+            genes = regions_genes_dict[region]
             gene = sf.get_gene(stem_inds, region, genes, ref_dict)
             if gene is not None:
                 gs_dict[i] = {}

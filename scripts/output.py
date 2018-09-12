@@ -13,7 +13,7 @@ This module is a collection of functions that perform DG analysis tasks
 import numpy as np
 
 
-def write_dg_ng_sam(reads_file, rna_file, dg_reads_dict, dg_dict):
+def write_dg_ng_sam(reads_file, rna_file, dg_reads_dict, dg_dict, dg_offset):
     """
     Function that writes the ouput SAM file
     
@@ -31,6 +31,8 @@ def write_dg_ng_sam(reads_file, rna_file, dg_reads_dict, dg_dict):
         Dictionary of DG and reads
     dg_dict : dict
         Dictionary of DG metadata, including DG and NG
+    dg_offset : int
+        DG index offset
     
     Returns
     -------
@@ -46,14 +48,14 @@ def write_dg_ng_sam(reads_file, rna_file, dg_reads_dict, dg_dict):
                     ng = dg_info['NG']
                     dg_reads_list = dg_reads_dict[dg]
                     if read_id in dg_reads_list:
-                        data.append('DG:i:' + str(dg))
+                        data.append('DG:i:' + str(dg + dg_offset))
                         data.append('NG:i:' + str(ng))
                         f.write('\t'.join(data) + '\n')
                         break          
     return
 
 
-def write_dg(dg_file, dg_dict, region):
+def write_dg(dg_file, dg_dict, region, dg_offset):
     with open(dg_file, 'a') as f:
         for (dg, dg_info) in dg_dict.items():
             dg_inds = dg_info['arm_inds']
@@ -64,7 +66,7 @@ def write_dg(dg_file, dg_dict, region):
             r_stop = dg_inds[3] + 1
             l_len = dg_inds[1] - dg_inds[0] + 1
             r_len = dg_inds[3] - dg_inds[2] + 1
-            dg_str = 'Group_%d_%.16f' %(dg, coverage)
+            dg_str = 'Group_%d_%.16f' %(dg + dg_offset, coverage)
             line = [region, str(l_start), str(r_stop), dg_str, 
                     str(num_reads), '-', str(l_start), str(l_start), 
                     '0,0,0', '2', '%d,%d' %(l_len, r_len), 
@@ -73,7 +75,7 @@ def write_dg(dg_file, dg_dict, region):
     return
 
 
-def write_sg_arc(sg_arc_file, sg_dict, region):
+def write_sg_arc(sg_arc_file, sg_dict, region, dg_offset):
     with open(sg_arc_file, 'a') as f:
         for (sg, sg_info) in sg_dict.items():
             sg_inds = sg_info['arm_inds']
@@ -81,13 +83,13 @@ def write_sg_arc(sg_arc_file, sg_dict, region):
                 region, 
                 str(int(np.mean(sg_inds[:2])) + 1),  # biology is 1-indexed
                 str(int(np.mean(sg_inds[2:])) + 1),
-                str(sg)
+                str(sg + dg_offset)
             ]
             f.write('\t'.join(line) + '\n')      
     return
 
 
-def write_sg_bp(sg_bp_file, sg_dict, region):
+def write_sg_bp(sg_bp_file, sg_dict, region, dg_offset):
     with open(sg_bp_file, 'a') as f:
         for (sg, sg_info) in sg_dict.items():
             l_bp, r_bp = sg_info['basepairs']
@@ -96,19 +98,19 @@ def write_sg_bp(sg_bp_file, sg_dict, region):
                     region, 
                     str(l_ind + 1),  # biology is 1-indexed
                     str(r_ind + 1), 
-                    str(sg)
+                    str(sg + dg_offset)
                 ]
                 f.write('\t'.join(line) + '\n')          
     return
 
 
 def write_sg(
-    sg_file, sg_dict, sg_reads_dict, dg_dict, reads_dict
+    sg_file, sg_dict, sg_reads_dict, dg_dict, reads_dict, dg_offset
 ):
     with open(sg_file, 'a') as f:
         for (dg, dg_info) in dg_dict.items():
             coverage = dg_info['coverage']
-            dg_str = 'Group_%d_%.16f' %(dg, coverage)
+            dg_str = 'Group_%d_%.16f' %(dg + dg_offset, coverage)
             line = [dg_str]
             
             

@@ -17,14 +17,15 @@ import argparse
 import datetime
 import numpy as np
 from itertools import chain
-import preprocessing as pp, graphing as gp, dg_analysis as da, \
-stem_discovery as sd, output as op
+from joblib import Parallel, delayed
+import preprocessing as pp, run_analysis as ra, output as op
 
 
 # Global variables
 max_reads = 10000
 min_overlap = 0.4
 bin_width = 40
+threads = 4
 
 
 class ReadsFiles(object):
@@ -54,18 +55,19 @@ def parse_args():
                         help='Path to aligned PARIS reads file (SAM)')
     parser.add_argument('ref_seq', 
                         help='Path to reference sequence file (FASTA)')
-    parser.add_argument('ref_genes', 
-                        help='Path to file listing genes in reference '
-                        'sequence (BED)')
-    parser.add_argument('-c', '--chimeric', 
+    parser.add_argument('ref_genes',
+                        help='Path to file listing genes in reference'
+                        ' sequence (BED)')
+    parser.add_argument('-c', '--chimeric',  
                         help='Path to chimeric PARIS reads file (SAM)')
     parser.add_argument('-r', '--regions', 
-                        help='Genomic regions of interest (separated only by '
-                        'commas, should match naming system in reference)')
+                        help='Genomic regions of interest (separated only by'
+                        ' commas, should match naming system in reference)')
     parser.add_argument('-g', '--genes', 
                         help='Genes of interest (separated only by commas)')
-    parser.add_argument('out', 
-                        help='Path of output')
+    parser.add_argument('-t', '--threads', 
+                        help='Number of threads')
+    parser.add_argument('out', help='Path of output')
     args = parser.parse_args(sys.argv[1:])
     return args
 
@@ -122,121 +124,81 @@ def main():
                 %(chimeric_stop - chimeric_start)
             )
     
-
+    
         # Parse analysis dictionary and reads
         print('Preparing reads for analysis\n')
         log.write('Preparing reads for analysis\n')
         prepare_start = datetime.datetime.now()
-        analysis_dict = pp.get_analysis_dict(
+        regions_genes_dict = pp.get_regions_genes_dict(
             ref_dict, args.regions, args.genes
         )
-        reads_dict, regions_genes_dict = pp.parse_reads(args.reads, ref_dict)
+        reads_dict, regions_readgenes_dict = pp.parse_reads(
+            args.reads, ref_dict
+        )
+        analysis_dict = pp.get_analysis_dict(
+            regions_genes_dict, regions_readgenes_dict
+        )
         prepare_stop = datetime.datetime.now()
         log.write(
             'Read preparation time: %s\n\n' %(prepare_stop - prepare_start)
         )
 
-
+        
         # Run analysis pipeline
         start = datetime.datetime.now()
-        dg_ind = 0
-        for region in analysis_dict:
-            region_seq = ref_dict[region]['sequence']
-            for (l_gene, r_gene) in regions_genes_dict[region]:
-                if (l_gene in analysis_dict[region]) or \
-                   (r_gene in analysis_dict[region]):
-                    gene_start = datetime.datetime.now()
-                    ng_ind = 0
-                    gene_ids = [
-                        read_id for (read_id, read_info) in reads_dict.items() 
-                        if (read_info[4] == region) & (read_info[5] == l_gene) 
-                        & (read_info[6] == r_gene)
-                    ]
-                    gene_ids = pp.filter_gene_reads(gene_ids, reads_dict)
-                    if l_gene == r_gene:
-                        print(
-                            'Analyzing %s reads spanning gene %s\n' 
-                            %(len(gene_ids), l_gene)
-                        )
-                        log.write(
-                            'Analyzing %s reads spanning gene %s\n' 
-                            %(len(gene_ids), l_gene)
-                        )
-                    else:
-                        print(
-                            'Analyzing %s reads spanning genes %s and %s\n' 
-                            %(len(gene_ids), l_gene, r_gene)
-                        )
-                        log.write(
-                            'Analyzing %s reads spanning genes %s and %s\n' 
-                            %(len(gene_ids), l_gene, r_gene)
-                        )
-                    if len(gene_ids) > 1:
-
-
-                        # Analyze reads to obtain DGs
-                        weights = gp.get_weights(
-                            gene_ids, reads_dict, b_w=bin_width
-                        )
-                        if len(gene_ids) > max_reads:
-                            inds_samp = np.random.choice(
-                                len(gene_ids), max_reads, replace=False,
-                                p=weights
-                            )
-                        else:
-                            inds_samp = range(len(gene_ids))
-                        graph = gp.graph_reads(
-                                [gene_ids[ind] for ind in inds_samp], 
-                                reads_dict, t=min_overlap
-                            )
-                        reads_dg_dict, dg_ind = gp.cluster_graph(graph, dg_ind)
-                        dg_reads_dict = da.get_preliminary_dgs(
-                            reads_dict, reads_dg_dict
-                        )
-                        if len(gene_ids) > max_reads:
-                            
-                            
-                            # Add back in unsampled reads
-                            inds_unsamp = np.setdiff1d(
-                                range(len(gene_ids)), inds_samp
-                            )
-                            dg_reads_dict, dg_index = da.add_reads_to_dg(
-                                dg_reads_dict, [
-                                    gene_ids[ind] for ind in inds_unsamp
-                                ], 
-                                reads_dict, dg_ind, t=min_overlap
-                            )
-                        dg_filtered_dict = da.filter_dgs(dg_reads_dict)
-                        dg_dict, ng_ind = da.create_dg_dict(
-                            dg_filtered_dict, reads_dict, ng_ind
-                        )
-                        if len(dg_filtered_dict) >= 1:
-                        
-                        
-                            # If there is a valid number of DGs, do SG discovery
-                            # Refine reads to get stem group (SG) dict
-                            sg_reads_dict = sd.dg_to_sg_dict(dg_filtered_dict, reads_dict)
-                            sg_dict = sd.create_sg_dict(sg_reads_dict, reads_dict, region_seq)
-
-
-                            # Output SAM file
-                            op.write_dg_ng_sam(
-                                args.reads, files.out_sam, dg_reads_dict, dg_dict
-                            )
-
-
-                            # Write remaining output files
-                            op.write_dg(files.out_dg, dg_dict, region)
-                            op.write_sg_arc(files.out_sg_arc, sg_dict, region)
-                            op.write_sg_bp(files.out_sg_bp, sg_dict, region)
-                            op.write_sg(
-                                files.out_sg, sg_dict, sg_reads_dict, dg_dict, reads_dict
-                            )
-                    gene_stop = datetime.datetime.now()
-                    log.write('Gene analysis time: %s\n' %(gene_stop - gene_start))
+        arg_instances = [
+            (
+                l_gene, r_gene, region, reads_dict, ref_dict, 
+                log, max_reads, min_overlap, bin_width
+            ) for (l_gene, r_gene), region in analysis_dict.items()
+        ]
+        results = Parallel(n_jobs=threads,  prefer="threads")(
+            map(delayed(ra.run_analysis), arg_instances)
+        )
+        dg_offset = 0
+        for (iter_args, iter_results) in zip(arg_instances, results):
+            l_gene, r_gene = iter_args[:2]
+            [
+                dg_reads_dict, dg_dict, sg_reads_dict, sg_dict, 
+                region, gene_time, num_reads
+            ] = iter_results
+            if l_gene == r_gene:
+                log.write(
+                    'Analyzed %s reads spanning gene %s\n' \
+                    'Analysis time: %s\n' \
+                    %(num_reads, l_gene, gene_time)
+                )
+            else:
+                log.write(
+                    'Analyzed %s reads spanning genes %s and %s\n' \
+                    'Analysis time: %s\n' \
+                    %(num_reads, l_gene, r_gene, gene_time)
+                )
+            if dg_dict:
+                # Output SAM file and dg file
+                op.write_dg_ng_sam(
+                    args.reads, files.out_sam, 
+                    dg_reads_dict, dg_dict, dg_offset
+                )
+                op.write_dg(files.out_dg, dg_dict, region, dg_offset)
+                if sg_dict:
+                    # Write remaining output files
+                    op.write_sg_arc(
+                        files.out_sg_arc, sg_dict, region, dg_offset
+                    )
+                    op.write_sg_bp(
+                        files.out_sg_bp, sg_dict, region, dg_offset
+                    )
+                    op.write_sg(
+                        files.out_sg, sg_dict, sg_reads_dict, dg_dict, 
+                        reads_dict, dg_offset
+                    )
+                dg_offset += max(dg_dict.keys()) + 1
         stop = datetime.datetime.now()
         log.write('\nTotal analysis time: %s\n' %(stop - start))
+        print('\nTotal analysis time: %s\n' %(stop - start))
     print('Analysis complete')
 
+    
 if __name__ == '__main__':
     main()
