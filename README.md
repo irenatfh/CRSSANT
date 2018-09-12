@@ -49,6 +49,10 @@ CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -g gene output
 ```
 CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -r region1,region2 -g gene1,gene2,gene3 output
 ```
+
+### Using multiple threads
+CRSSANT runs using a default of 4 threads in parallel. You may specify a different number of threads with the `-t` flag.
+
 ### Creating a `reference.bed` file
 CRSSANT assumes that the `reference.bed` file contains minimal gene information in the following 6-column format:
 ```
