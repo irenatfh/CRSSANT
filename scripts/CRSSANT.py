@@ -17,7 +17,7 @@ import argparse
 import datetime
 import numpy as np
 from itertools import chain
-from joblib import Parallel, delayed
+import multiprocessing
 import preprocessing as pp, run_analysis as ra, output as op
 
 
@@ -149,12 +149,11 @@ def main():
         arg_instances = [
             (
                 l_gene, r_gene, region, reads_dict, ref_dict, 
-                log, max_reads, min_overlap, bin_width
+                max_reads, min_overlap, bin_width
             ) for (l_gene, r_gene), region in analysis_dict.items()
         ]
-        results = Parallel(n_jobs=threads,  prefer="threads")(
-            map(delayed(ra.run_analysis), arg_instances)
-        )
+        pool = multiprocessing.Pool(processes=threads)
+        results = pool.map(ra.run_analysis, arg_instances)
         dg_offset = 0
         for (iter_args, iter_results) in zip(arg_instances, results):
             l_gene, r_gene = iter_args[:2]
@@ -201,4 +200,5 @@ def main():
 
     
 if __name__ == '__main__':
+    multiprocessing.freeze_support()
     main()

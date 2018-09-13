@@ -23,7 +23,7 @@ def run_analysis(args):
     dg_dict = None
     sg_reads_dict = None
     sg_dict = None
-    l_gene, r_gene, region, reads_dict, ref_dict, log, max_reads, min_overlap, bin_width = args
+    l_gene, r_gene, region, reads_dict, ref_dict, max_reads, min_overlap, bin_width = args
     
     
     region_seq = ref_dict[region]['sequence']
