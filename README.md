@@ -1,6 +1,6 @@
 # CRSSANT: Crosslinked RNA Secondary Structure Analysis using Network Techniques
 
-CRSSANT is an analysis pipeline for sequencing data produced using the PARIS assay described in [Lu et al., Cell 2016](https://www.sciencedirect.com/science/article/pii/S0092867416304226). CRSSANT automates the process of grouping sequencing reads into duplex groups, and reports the potential stem structures that result from folding duplex groups using ViennaRNA's RNAfold software.
+CRSSANT is an analysis pipeline for sequencing data produced using the PARIS assay described in [Lu et al., Cell 2016](https://www.sciencedirect.com/science/article/pii/S0092867416304226). CRSSANT automates the process of grouping sequencing reads into duplex groups (DGs), extracts stem groups (SGs) from the duplex groups, and reports the potential stem structures that result from folding SGs using ViennaRNA's RNAfold software.
 
 ## Install
 
@@ -20,31 +20,32 @@ Navigate to the release page, right click on the source code, and save it to the
 
 ## Run
 
-To run the CRSSANT executable, open a command-line interface and run
-```
-CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -r regions -g genes output
-```
-where files `reads.sam`, `reference.fa`, and `reference.bed` include paths to the files reads, reference sequence and reference gene files, respectively, and `output` is the path/location where outputs should be written. See below for how to specify regions and genes using the optional `-r` and `-g` flags. Users may also specify a chimeric reads file using the optional `-c` flag.
-
-To perform the CRSSANT analysis pipeline on reads overlapping all rRNA regions and genes, run:
+To run the CRSSANT executable on all reads in a SAM file, open a command-line interface and run
 ```
 CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed output
 ```
-To run the CRSSANT pipeline using the Python source code, prepend all commands by calling Python on your platform, e.g. `python CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -r regions -g genes output`.
+where files `reads.sam`, `reference.fa`, and `reference.bed` include paths to the files reads, reference sequence and reference gene files, respectively, and `output` is the path/location where outputs should be written. See below for how to specify non-default pipeline parameters using optional flags.<!--- Users may also specify a chimeric reads file using the optional `-c` flag.--->
 
-### Input data
-The CRSSANT pipeline assumes that input data is a SAM file of aligned sequencing reads produced by the PARIS assay. The reads are further assumed to be mapped to the same genomic region (i.e. chromosome). The SAM file may contain reads from different genes, but all genes must reside in only one genomic region.
+To run the CRSSANT pipeline using the Python source code, prepend all commands by calling Python on your platform, e.g. `python CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -g genes output`.
 
-### Specifying genes for analysis
-By default, CRSSANT analyzes all possible pairs of genes present in the SAM file. The use may also specify a particular pair of genes for analysis using the gene flag `-g`, e.g. `-g gene1,gene2` indicates that the CRSSANT pipeline should analyze only reads with left arm mapped to `gene1` and right arm mapped to `gene2`.
+### Specifying pipeline parameters
+By default, the CRSSANT pipeline analyzes all reads in a SAM file, uses the spectral clustering method to cluster reads into DGs with overlap threshold parameter of 0.5 and eigenratio threshold of 5, and uses eight threads for parallel processing.
 
-* To run CRSSANT on a particular gene pair of interest, run with flag `-g`:
+#### Specifying genes for analysis
+The CRSSANT pipeline assumes that input data is a SAM file of aligned sequencing reads produced by the PARIS assay. The reads are further assumed to be mapped to the same genomic region (i.e. chromosome). The SAM file may contain reads from different genes, but all genes must reside in only a single genomic region. By default, CRSSANT analyzes all possible pairs of genes present in the SAM file. The use may also specify a particular pair of genes for analysis using the gene flag `-g`, e.g. `-g gene1,gene2` indicates that the CRSSANT pipeline should analyze only reads with left arm mapped to `gene1` and right arm mapped to `gene2`.
+
+To run CRSSANT on a particular gene pair of interest, run with flag `-g`:
 ```
 CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -g g1,g2 output
 ```
 
-### Using multiple threads
-CRSSANT runs using a default of 8 threads in parallel. You may specify a different number of threads with the `-t` flag.
+#### Specifying clustering method
+The default spectral clustering method may be operated with different overlap threshold and eigenratio threshold parameters by specifying one or both with the flags `t_o` and `t_eig`, respectively. `t_o` may be any float between 0 and 1, and `t_eig` may be any positive number. Increasing `t_o` tends to result in more DGs containing fewer reads, and increasing `t_eig` tends to result in fewer DGs containing more reads.
+
+The user may also specify the cliques-finding method for clustering DGs by specifying the clustering flag `c` with `cliques`, e.g. `-c cliques`. If the cliques-finding method is specified, `t_o` may also be specified, and again may be any float between  and 1.
+
+#### Specifying multiple threads
+CRSSANT runs using a default of 8 threads in parallel. The user may specify a different number of threads with the `-t` flag.
 
 ### Creating a `reference.bed` file
 CRSSANT assumes that the `reference.bed` file contains minimal gene information in the following 6-column format:
@@ -88,7 +89,7 @@ region    SG arc start    SG arc stop     SG
 ```
 5. `_sg.aux`: auxiliary file containing SG crosslinking and stem length information, and arm statistics for all DGs. Since SG IDs correspond to DG IDs, if a DG did not result in an SG due to 90th percentile filtering or the SG did not result in a valid structure, some of the following information is replaced with null information. The file header contains the following columns:
 ```
-DG_coverage    num_reads     UU_cl,UC_cl,num_baspairs    L_start_min,L_start_max,L_start_std     L_stop_min,L_stop_max,L_stop_std        R_start_min,R_start_max,R_start_std     R_stop_min,R_stop_max,R_stop_std
+DG_coverage    num_reads     UU_cl,UC_cl,num_basepairs    L_start_min,L_start_max,L_start_std     L_stop_min,L_stop_max,L_stop_std        R_start_min,R_start_max,R_start_std     R_stop_min,R_stop_max,R_stop_std
 ```
 where
 * `num_reads` is the number of reads in the SG, i.e. the number of reads in the DG that passed 90th percentile filtering
