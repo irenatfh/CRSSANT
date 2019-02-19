@@ -15,77 +15,9 @@ import networkx as nx
 from sklearn.cluster import KMeans
 import scipy as sp
 import subfunctions as sf
-from collections import Counter
 
 
-def get_weights(read_ids, reads_dict, b_w=30):
-    """
-    Function to get read weights
-    
-    Reads are binned by the average arm positions of the right and left arms.
-    Weights are uniformly weighted across all bins, and are further uniformly 
-    weighted between all reads in a given bin.
-    
-    Parameters
-    ----------
-    read_ids : list
-        List of read IDs
-    reads_dict : dict
-        Dictionary of reads
-    b_w : int
-        Bin width
-
-    Returns
-    -------
-    read_weights : list
-    """
-    reads_avg_inds = np.array(
-        [
-            [
-                np.mean(reads_dict[read_id][0:2]),
-                np.mean(reads_dict[read_id][2:4])
-            ]
-            for read_id in read_ids
-        ]
-    )
-    [
-        min_l_avg_ind, max_l_avg_ind,
-        min_r_avg_ind, max_r_avg_ind 
-    ] = [
-        np.min(reads_avg_inds[:, 0]), np.max(reads_avg_inds[:, 0]),
-        np.min(reads_avg_inds[:, 1]), np.max(reads_avg_inds[:, 1])
-    ]
-    num_l_bins = np.floor((max_l_avg_ind - min_l_avg_ind) / b_w)
-    num_r_bins = np.floor((max_r_avg_ind - min_r_avg_ind) / b_w)
-    bins_counts_dict = {}
-    bin_id_list = []
-    for read_avg_inds in reads_avg_inds:
-        l_bin = np.min(
-            [
-                np.floor((read_avg_inds[0] - min_l_avg_ind) / b_w), 
-                num_l_bins - 1
-            ]
-        )
-        r_bin = np.min(
-            [
-                np.floor((read_avg_inds[1] - min_r_avg_ind) / b_w), 
-                num_r_bins - 1
-            ]
-        )
-        bin_id = int((r_bin * num_l_bins) + l_bin)
-        bin_id_list.append(bin_id)
-        if bin_id not in bins_counts_dict.keys():
-            bins_counts_dict[bin_id] = 0
-        bins_counts_dict[bin_id] += 1 
-    base_prob = 1 / len(bins_counts_dict)
-    read_weights = [
-        base_prob * (1 / bins_counts_dict[bin_id])
-        for bin_id in bin_id_list
-    ]
-    return read_weights
-
-
-def graph_reads(gene_ids, reads_dict, t=0.3):
+def graph_reads(gene_ids, reads_dict, t):
     """
     Function that creates a weighted graph representation of the reads
 
@@ -142,47 +74,116 @@ def graph_reads(gene_ids, reads_dict, t=0.3):
                     check_inds = (inds_2[3] >= inds_1[2])
                 if check_inds:
                     ratio_l, ratio_r = sf.get_overlap_ratios(inds_1, inds_2)
-                    if (ratio_l > t) and (ratio_r > t):
-                        graph.add_edge(
+                    if (ratio_l > t) and (ratio_r > t): 
+                         graph.add_edge(
                             id_1, id_2, weight=(ratio_l + ratio_r)
-                        )
+                         )
                 else:
                     loop_flag = 0
     return graph
 
 
-def cluster_graph(graph, dg_ind):
+def cluster_graph(graph, n=10, t=5):
     """
-    Function that performs spectral clustering on the weighted graph
+    Function that performs spectral clustering on the weighted graph.
+    Cluster number, k, is determined by finding the first eigengap that is
+    some amount t larger than preceding eigengaps.
 
     Parameters
     ----------
     graph : NetworkX graph
         Weighted graph representation of all reads
-    dg_ind : int
-        DG index to start from
+    n : int
+        Number of eigenvalues (DG splits) to consider threshold
+    t : int
+        Multiplicity of median eigengap threshold
 
     Returns
     -------
-    kmeans_dict, dg_ind : dict, int
+    reads_dg_dict, dg_ind : dict, int
     """
-    kmeans_dict = {}
+    dg_ind = 0
+    reads_dg_dict = {}
     subgraphs = list(nx.connected_component_subgraphs(graph))
     for subgraph in subgraphs:
-        if len(subgraph.nodes()) > 1:
-            L = nx.laplacian_matrix(subgraph).todense()
-            D = np.diag([subgraph.degree[node] for node in subgraph.nodes()])
-            w, v = sp.linalg.eigh(L, D)
-            eigengaps = np.diff(w)
-            k = np.argmax(eigengaps) + 1
-            Y = v[:,:k]  # first k eigenvectors for clustering
+        k = 1
+        if len(subgraph) > 1:
+            L = nx.laplacian_matrix(
+                subgraph, nodelist=sorted(subgraph.nodes())
+            ).todense()
+            D = np.diag(
+                [subgraph.degree[node] for node in sorted(subgraph.nodes())]
+            )
+            w, v = sp.linalg.eigh(L, D, type=1)  # Since L always symmetric
+            eigengaps = np.diff(w[:(n + 1)])
+            if len(eigengaps) > 2:
+                if (w[1] > 1) and (w[1] >= 10*np.median(eigengaps[1:])):
+                    k = 2
+                else:
+                    # ignore divide by 0 warning if eigengaps median is 0
+                    np.seterr(divide='ignore', invalid='ignore')
+                    eigenratios = np.copy(eigengaps)
+                    eigenratios[1:] = np.array([
+                        eigengaps[i] / np.median(eigengaps[:i])
+                        for i in range(1, len(eigengaps))
+                    ])
+                    if max(eigenratios) >= t:
+                        k = np.argmax(
+                            eigenratios >= t
+                        ) + 2
+            Y = np.transpose(v[:k])
             kmeans = KMeans(n_clusters=k, random_state=0).fit(Y)
             kmeans.labels_ += dg_ind
-            subgraph_dict = dict(zip(subgraph.nodes(), kmeans.labels_))
-            kmeans_dict = {**kmeans_dict, **subgraph_dict}
-            dg_ind += k
+            subgraph_dict = dict(zip(sorted(subgraph.nodes()), kmeans.labels_))
         else:
-            read_id = list(subgraph.nodes())[0]
-            kmeans_dict[read_id] = dg_ind
-            dg_ind +=1 
-    return kmeans_dict, dg_ind
+            subgraph_dict = {list(subgraph)[0]: dg_ind}       
+        reads_dg_dict = {**reads_dg_dict, **subgraph_dict}
+        dg_ind += k
+    return reads_dg_dict
+
+
+def get_cliques(graph):
+    """
+    Function that performs gets cliques from subgraphs of connected components.
+
+    Parameters
+    ----------
+    graph : NetworkX graph
+        Weighted graph representation of all reads
+
+    Returns
+    -------
+    reads_dg_dict : dict, int
+    """
+    dg_ind = 0
+    reads_dg_dict = {}
+    subgraphs = [graph.subgraph(c) for c in nx.connected_components(graph)]
+    for subgraph in subgraphs:
+        if len(subgraph) > 1:
+            cliques_kept = []
+            cliques_all = list(nx.find_cliques(subgraph))
+            cliques_all.sort(key=len)
+            while len(cliques_all) > 0:
+                cliques_nodes = set(
+                    [node for clique in cliques_kept for node in clique]
+                )
+                clique_test = cliques_all.pop()
+                if not set(list(clique_test)).intersection(cliques_nodes):
+                    cliques_kept.append(clique_test)
+            dg_inds = [
+                [dg_ind + i]*len(clique) 
+                for i, clique in enumerate(cliques_kept)
+            ]
+            subgraph_dict = dict(
+                zip(
+                    [node for clique in cliques_kept for node in clique],
+                    [ind for inds_list in dg_inds for ind in inds_list]
+                )
+            )
+            reads_dg_dict = {**reads_dg_dict, **subgraph_dict}
+            dg_ind += len(cliques_kept)
+        else:
+            read_id = list(subgraph)[0]
+            reads_dg_dict[read_id] = dg_ind
+            dg_ind += 1
+    return reads_dg_dict

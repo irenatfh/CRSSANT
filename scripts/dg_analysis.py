@@ -42,72 +42,21 @@ def get_preliminary_dgs(reads_dict, reads_dg_dict):
     return dg_reads_dict
 
 
-def add_reads_to_dg(dg_reads_dict, reads_ids, reads_dict, dg_ind, t=0.3):
-    """
-    Function to adjust duplex groups
-
-    The goal is to assign reads that were not sampled to DGs. Each read is 
-    checked for overlap with an existing DGs.
-    + If the read has no overlap with any DGs, create a new DG.
-    + If the read overlaps at least two DGs equally, again create a new DG.
-    + Otherwise, add the read to the DG with which it has the largest overlap
-    Note that this process updates the dg_reads_dict throughout the loop.
-
-    Parameters
-    ----------
-    dg_reads_dict : dict
-        Dictionary of DGs and their reads
-    reads_ids : list
-        List of reads indices
-    reads_dict : dict
-        Dictionary of reads
-    dg_index : int
-    t : float
-        Overlap threshold
-
-    Returns
-    -------
-    dg_reads_dict, dg_ind : dict, int
-    """
-    new_dg = 0
-    for read_id in reads_ids:
-        read_inds = reads_dict[read_id][:4]
-        dg_overlaps = {}
-        for (dg, dg_reads) in dg_reads_dict.items():
-            dg_reads_inds = np.array(
-                [reads_dict[read_id][:4] for read_id in dg_reads]
-            )
-            dg_inds = np.median(dg_reads_inds, axis=0)
-            ratio_l, ratio_r = sf.get_overlap_ratios(read_inds, dg_inds)
-            if (ratio_l > t) and (ratio_r > t):
-                dg_overlaps[dg] = ratio_l + ratio_r
-        if len(dg_overlaps) == 0:
-            new_dg = 1
-        else:
-            max_overlap = max(dg_overlaps.values())
-            max_dgs_list = [
-                i for i in dg_overlaps.keys() if dg_overlaps[i] == max_overlap
-            ]
-            if len(max_dgs_list) > 1:
-                new_dg = 1
-        if new_dg == 0:
-            dg_reads_dict[max_dgs_list[0]].append(read_id)
-        else:
-            dg_reads_dict[dg_ind] = [read_id]
-            dg_ind += 1
-        new_dg = 0 
-    return dg_reads_dict, dg_ind
-
-
-def filter_dgs(dg_reads_dict):
+def filter_dgs(dg_reads_dict, reads_dict):
     """
     Function to filter out invalid DGs
     
-    DGs with fewer than two reads are eliminated.
+    DGs whose reads are all identical are eliminated. DGs with fewer than two 
+    reads are also eliminated.
+    
     Parameters
     ----------
     dg_reads_dict : dict
         Dictionary of DGs and their reads
+    reads_dict : dict
+        Dictionary of reads
+    
+    
     Returns
     -------
     filtered_dict : dict
@@ -116,11 +65,16 @@ def filter_dgs(dg_reads_dict):
     for (dg, dg_reads) in dg_reads_dict.items():
         num_reads = len(dg_reads)
         if num_reads > 1:
-            filtered_dict[dg] = dg_reads
+            seq_list = [
+                reads_dict[dg_read][7] + reads_dict[dg_read][8] 
+                for dg_read in dg_reads
+            ]
+            if len(set(seq_list)) > 1:
+                filtered_dict[dg] = dg_reads
     return filtered_dict
 
 
-def create_dg_dict(dg_reads_dict, reads_dict, ng_ind):
+def create_dg_dict(dg_reads_dict, reads_dict):
     """
     Function that creates the DG dictionary
     
@@ -132,31 +86,35 @@ def create_dg_dict(dg_reads_dict, reads_dict, ng_ind):
         + c = number of reads in a given DG
         + a = number of reads overlapping the left arm of the DG
         + b = number of reads overlapping the right arm of the DG
+        
     Parameters
     ----------
     dg_reads_dict : dict
         Dictionary of DGs and their reads
     reads_dict : dict
         Dictionary of reads
+        
     Returns
     -------
-    dg_dict : dict
+    dg_stats_dict : dict
     """
+    ng_ind = 0
     gene_reads = list(itertools.chain.from_iterable(dg_reads_dict.values()))
-    dg_dict = {}
+    dg_stats_dict = {}
     ng_dict = {}
     for (dg, dg_reads) in dg_reads_dict.items():
+        # Get DG indices
         dg_min = min([reads_dict[i][0] for i in dg_reads])
         dg_max = max([reads_dict[i][3] for i in dg_reads])
         dg_reads_inds = np.array(
             [reads_dict[dg_read][:4] for dg_read in dg_reads]
         )
         dg_inds = [int(i) for i in np.median(dg_reads_inds, axis=0)]
-        overlapping_l = 0
-        overlapping_r = 0
         
         
         # Calculate coverage
+        overlapping_l = 0
+        overlapping_r = 0
         for read_id in gene_reads:
             read_inds = reads_dict[read_id][0:4]
             ratio_l, ratio_r = sf.get_overlap_ratios(dg_inds, read_inds)
@@ -192,8 +150,24 @@ def create_dg_dict(dg_reads_dict, reads_dict, ng_ind):
                 ng_dict[ng_ind] = [dg]
                 dg_ng = ng_ind
                 ng_ind += 1
-        dg_dict[dg] = {
+        dg_stats_dict[dg] = {
             'arm_inds' : dg_inds, 'coverage': cov, 
             'num_reads' : len(dg_reads), 'NG' : dg_ng
         }
-    return dg_dict, ng_ind
+    return dg_stats_dict
+
+
+def check_nonoverlapping_reads(dg_reads_dict, reads_dict):
+    n_nonoverlap = 0
+    for dg, dg_reads in dg_reads_dict.items():
+        dg_inds = [tuple(reads_dict[i][0:4]) for i in dg_reads]
+        for read_inds in dg_inds:
+            overlap_counter = 0
+            other_inds = set(dg_inds).difference(read_inds)
+            for inds in other_inds:
+                if ((read_inds[0] > inds[1]) and (read_inds[2] > inds[3])) or \
+                ((inds[0] > read_inds[1]) and (inds[2] > read_inds[3])):
+                    overlap_counter += 1
+            if overlap_counter > 0:
+                n_nonoverlap += 1
+    return n_nonoverlap
