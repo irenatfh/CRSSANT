@@ -47,14 +47,14 @@ The default spectral clustering method may be operated with different overlap th
 CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -t_o 0.7 -t_eig 8 output
 ```
 
-The user may also specify the cliques-finding method for clustering DGs by specifying the clustering flag `c` with `cliques`, e.g. `-c cliques`. If the cliques-finding method is specified, `t_o` may also be specified, and again may be any float between  and 1. By default, for the cliques-finding method the overlap threshold is set to 0.1. For example, the following command runs CRSSANT on reads whose arms both map to gene1, and performs DG clustering with the cliques-finding method using overlap threshold 0.3:
+The user may also specify the cliques-finding method for clustering DGs by specifying the clustering flag `cluster` with `cliques`, e.g. `-cluster cliques`. If the cliques-finding method is specified, `t_o` may also be specified, and again may be any float between  and 1. By default, for the cliques-finding method the overlap threshold is set to 0.1. For example, the following command runs CRSSANT on reads whose arms both map to gene1, and performs DG clustering with the cliques-finding method using overlap threshold 0.3:
 
 ```
-CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -g gene1,gene1 -c cliques -t_o 0.3 output
+CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -g gene1,gene1 -cluster cliques -t_o 0.3 output
 ```
 
 #### Specifying number of threads
-CRSSANT runs using a default of 8 threads in parallel. The user may specify a different number of threads with the `-t` flag.
+CRSSANT runs using a default of 8 threads in parallel. The user may specify a different number of threads with the `-n` flag.
 
 ### Creating a `reference.bed` file
 CRSSANT assumes that the `reference.bed` file contains minimal gene information in the following 6-column format:
