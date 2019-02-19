@@ -33,7 +33,7 @@ To run the CRSSANT pipeline using the Python source code, prepend all commands w
 By default, the CRSSANT pipeline analyzes all reads in a SAM file. The pipeline uses the spectral clustering method to cluster reads into DGs with overlap threshold parameter of 0.5 and eigenratio threshold of 5, and uses eight threads for parallel processing.
 
 #### Specifying genes for analysis
-The input to CRSSANT is assumed to be a SAM file of aligned sequencing reads produced by the PARIS assay. The reads are further assumed to be mapped to the same genomic region (e.g. chromosome or mini genome). The SAM file may contain reads from different genes, but all genes must reside in only a single genomic region. By default, CRSSANT analyzes all possible pairs of genes present in the SAM file. The user may also specify a particular pair of genes for analysis using the gene flag `-g`, e.g. `-g gene1,gene2` indicates that the CRSSANT pipeline should analyze only reads whose left arms map to gene1 and whose right arms map to gene`.
+The input to CRSSANT is assumed to be a SAM file of aligned sequencing reads produced by the PARIS assay. The reads are further assumed to be mapped to the same genomic region (e.g. chromosome or mini genome). The SAM file may contain reads from different genes, but all genes must reside in only a single genomic region. By default, CRSSANT analyzes all possible pairs of genes present in the SAM file. The user may also specify a particular pair of genes for analysis using the gene flag `-g`, e.g. `-g gene1,gene2` indicates that the CRSSANT pipeline should analyze only reads whose left arms map to gene1 and whose right arms map to gene2.
 
 To run CRSSANT on a particular gene pair of interest, run with flag `-g`:
 ```
@@ -115,7 +115,6 @@ CRSSANT_path/CRSSANT -h
 ```
 The help information may take ~10 seconds to load.
 
-<!---
 ## Test
 
 You can test CRSSANT using a collection of Homo sapiens ribosomal RNA (rRNA) test data that we have compiled:
@@ -123,7 +122,7 @@ You can test CRSSANT using a collection of Homo sapiens ribosomal RNA (rRNA) tes
 1. Download the compressed folder of [test data](https://github.com/ihwang/CRSSANT/tree/master/tests.tar.gz) and decompress using the command `tar -zxvf tests.tar.gz` or by double-clicking on the tar.gz file
 2. Specify the path/location where results should be written, e.g. `output`
 
-Run CRSSANT on all rRNA genes:
+Run CRSSANT on all rRNA genes in region hs54S:
 ```
 CRSSANT_path/CRSSANT tests/hsrRNA_reads.sam tests/hsrRNA.fa tests/hsrRNA_gene.bed output
 ```
@@ -131,4 +130,3 @@ or analyze specific genes, e.g. only reads whose left arms map to gene 5.8S and 
 ```
 CRSSANT_path/CRSSANT tests/hsrRNA_reads.sam tests/hsrRNA.fa tests/hsrRNA_gene.bed -g 5.8S,28S output
 ```
---->
