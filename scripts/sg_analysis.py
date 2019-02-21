@@ -111,8 +111,6 @@ def create_sg_dict(sg_reads_dict, reads_dict, ref_seq):
         r_seq = ref_seq[inds[2] : inds[3] + 1]
         fc, mfe = sf.fold_stem(l_seq, r_seq)
         cut_point = len(l_seq)
-        fc_l = [i for i in fc[ : cut_point] if i == '(' or i == '{']
-        fc_r = [i for i in fc[cut_point : ] if i == ')' or i == '}']
         if mfe != 0:
             sg_stats_dict[sg] = {}
             sg_stats_dict[sg]['num_reads'] = len(sg_reads)

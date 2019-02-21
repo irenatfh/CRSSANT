@@ -155,14 +155,13 @@ def get_stem_info(inds, fc, cut_point, ref_seq):
     """
     l_inds = [
         (i + inds[0]) for i in range(len(fc)) 
-        if fc[i] == '(' or fc[i] == '}'
+        if fc[i] == '(' or fc[i] == '{'
     ]
     r_inds = [
         (i + inds[2] - cut_point) for i in range(len(fc)) 
         if fc[i] == ')' or fc[i] == '}'
     ]
     r_inds = r_inds[::-1]
-    
     # Check crosslinking sites
     uu_count = 0
     uc_count = 0

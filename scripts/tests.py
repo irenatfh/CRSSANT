@@ -13,73 +13,31 @@ import numpy as np
 import subfunctions as sf
 
 
-def get_dg_dict(dg_bed):
-    """
-    Function to create DG dictionary based on DG file
-    
-    Parameters
-    ----------
-    dg_bed : str
-        Path to DG file (BED)
-        
-    Returns
-    -------
-    dg_dict : dict
-    """
-    # Get DG dict
-    dg_dict = {}
-    dg_valid_structs = []
-    with open(dg_bed, 'r') as f:
-        for line in f:
-            data = line.split('\t')
-            region = data[0]
-            dg = int(data[3].split('_')[1])
-            dg_dict[dg] = {}
-            coverage = float(data[3].split('_')[2])
-            num_reads = int(data[4])
-            l_start = int(data[1]) - 1
-            lens = [int(i) for i in data[10].split(',')]
-            r_start = [int(i) for i in data[11].split(',')][1] + l_start
-            dg_inds = np.array([l_start, l_start + lens[0] - 1, 
-                                r_start, r_start + lens[1] - 1])
-            dg_dict[dg]['region'] = region
-            dg_dict[dg]['arm_inds'] = dg_inds
-            dg_dict[dg]['coverage'] = coverage
-            dg_dict[dg]['num_reads'] = num_reads
-    return dg_dict
-
-
-def get_gs_dict(gs_bed, ref_dict, regions_genes_dict):
+def get_sg_dict(bp_bed, ref_dict):
     """
     Function to create dictionary of gold standard structures
     
     Parameters
     ----------
-    gs_bed : str
+    bp_bed : str
         Path to gold standard structures file (BED)
     ref_dict : dict
         Reference dictionary
-    regions_genes_dict : dict
-        Analysis dictionary
     
     Returns
     -------
-    gs_dict : dict
+    sg_dict : dict
     """
-    gs_dict = {}
-    regions = []
+    sg_dict = {}
     l_inds = []
     r_inds = []
-    with open(gs_bed, 'r') as f:
+    with open(bp_bed, 'r') as f:
         for line in f:
-            if 'graphType=' in line:
-                pass
-            else:
+            if 'graphType=' not in line:
                 data = line.split('\t')
                 region = data[0]
                 l_ind = int(data[1])
                 r_ind = int(data[2])
-                regions.append(region)
                 l_inds.append(l_ind)
                 r_inds.append(r_ind)
     l_inds = np.asarray(l_inds)
@@ -104,16 +62,8 @@ def get_gs_dict(gs_bed, ref_dict, regions_genes_dict):
             sorted([r_inds[j] for j in range(stem_start, stem_stop)])
         )
         stem_inds = np.array([l_stem[0], l_stem[-1], r_stem[0], r_stem[-1]])
-        region = regions[stem_start]
-        if region in regions_genes_dict:
-            genes = regions_genes_dict[region]
-            gene = sf.get_gene(stem_inds, region, genes, ref_dict)
-            if gene is not None:
-                gs_dict[i] = {}
-                gs_dict[i]['stem_inds'] = stem_inds
-                gs_dict[i]['region'] = region
-                gs_dict[i]['gene'] = gene
-    return gs_dict
+        sg_dict[i] = stem_inds
+    return sg_dict
 
 
 def shuffle_stem(l_seq, r_seq, n):
