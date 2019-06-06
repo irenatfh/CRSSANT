@@ -14,7 +14,7 @@ For more about the CRSSANT pipeline, please see the [bioRxiv preprint by Fischer
         * [Output folder](https://github.com/ihwang/CRSSANT#output-folder)
         * [Chimeric reads file](https://github.com/ihwang/CRSSANT#chimeric-reads-file)
         * [Genes for analysis](https://github.com/ihwang/CRSSANT#Genes-for-analysis)
-        * [Custering method](https://github.com/ihwang/CRSSANT#clustering-parameters)
+        * [Clustering method](https://github.com/ihwang/CRSSANT#clustering-method)
         * [Number of threads](https://github.com/ihwang/CRSSANT#Number-of-threads)        
 * [Outputs](https://github.com/ihwang/CRSSANT#outputs)
 * [Misc](https://github.com/ihwang/CRSSANT#misc)
