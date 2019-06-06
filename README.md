@@ -3,9 +3,18 @@ CRSSANT is an analysis pipeline for sequencing data produced using the PARIS ass
 
 Briefly, the CRSSANT pipeline is as follows: First, CRSSANT uses network analysis methods to cluster PARIS sequencing reads into DGs. After DGs have been found, a percentile rule is used to filter out reads that have one or both arms that are longer than the some percentile arm length, aggregated over all reads in a gene, and over both arms in a read. The remaining reads are referred to as stem groups, or SGs. SGs are piped into ViennaRNA's RNAfold software, and each SG is checked to see if it forms a valid stem structure. Predicted stem structures are reported as lists of base pairs.
 
+CRSSANT is written in Python and available as source code that you can download and run on yuor own machine
+
 For more about the CRSSANT pipeline, please see the [bioRxiv preprint by Fischer-Hwang et al.](LINKLINKLINK).
 
-## Downloading the Python source code:
+## Contents
+* [Download](https://github.com/ihwang/CRSSANT#ownload)
+* [Run](https://github.com/ihwang/CRSSANT#run)
+* [Outputs](https://github.com/ihwang/CRSSANT#output)
+* [Misc](https://github.com/ihwang/CRSSANT#misc)
+* [Test](https://github.com/ihwang/CRSSANT#test)
+
+## Download
 Navigate to the latest [release](https://github.com/ihwang/CRSSANT/releases), right click on the source code, and save it to a known path/location, e.g. `CRSSANT_path`. You will need Python version 3.6+ and the following Python packages. We recommend downloading the latest versions of these packages using the Ananconda/Bioconda package manager (follow instructions in links in parentheses):
 * [ViennaRNA v2.4.7+](https://www.tbi.univie.ac.at/RNA/) ([Anaconda Cloud link](https://anaconda.org/bioconda/viennarna))
 * [ushuffle v1.2.2+](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-9-192) ([Anaconda Cloud link](https://anaconda.org/bioconda/ushuffle))
@@ -21,12 +30,12 @@ python CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed
 ```
 where files `reads.sam`, `reference.fa`, and `reference.bed` include paths to the reads, reference sequence and reference gene files, respectively. See subsection [Specifying pipeline parameters](https://github.com/ihwang/CRSSANT#specifying-pipeline-parameters) for how to specify non-default pipeline parameters using optional flags.
 
-### Specifying pipeline parameters
+## Specifying pipeline parameters
 The input to CRSSANT is assumed to be a SAM file of aligned sequencing reads produced by the PARIS assay. The reads are further assumed to be mapped to the same genomic region (e.g. chromosome or mini genome). The SAM file may contain reads from different genes, but all genes must reside in only a single genomic region.
 
 By default, the CRSSANT pipeline analyzes all reads in a SAM file. The pipeline uses the spectral clustering method to cluster reads into DGs with overlap threshold parameter of `t_o=0.5` and eigenratio threshold of `t_eig=5`, and uses 8 threads for parallel processing. The following parameters allow the user to run CRSSANT using options different from the default ones.
 
-#### Specifying an output folder
+### Specifying an output folder
 The CRSSANT pipeline automatically writes all results to the same path where the reads file is found, but an output path may be specified with the `-o` flag:
 ```
 CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -o output
@@ -40,7 +49,7 @@ To specify a chimeric reads file, run with flag `-c`:
 CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -c chimeric.sam -o output
 ```
 
-#### Specifying genes for analysis
+### Specifying genes for analysis
 By default, CRSSANT analyzes all possible pairs of genes present in the SAM file. The user may also specify a particular pair of genes for analysis using the gene flag `-g`, e.g. `-g gene1,gene2` indicates that the CRSSANT pipeline should analyze only reads whose left arms map to gene1 and whose right arms map to gene2.
 
 To run CRSSANT on a particular gene pair of interest, run with flag `-g`:
@@ -48,7 +57,7 @@ To run CRSSANT on a particular gene pair of interest, run with flag `-g`:
 CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -g g1,g2 -o output
 ```
 
-#### Specifying clustering method and clustering parameters
+### Specifying clustering method and clustering parameters
 The default spectral clustering method may be operated with different overlap threshold and eigenratio threshold parameters by specifying one or both with the flags `t_o` and `t_eig`, respectively. `t_o` may be any float between 0 and 1, and `t_eig` may be any positive number. Increasing `t_o` tends to result in more DGs that contain fewer reads, and increasing `t_eig` tends to result in fewer DGs containing more reads. For example, the following command runs CRSSANT with spectral clustering using overlap threshold 0.6 and eigenratio threshold 8:
 ```
 CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -t_o 0.7 -t_eig 8 -o output
@@ -62,10 +71,10 @@ CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -g gene1,gene1 -cluste
 
 For more on these parameters, see the bioRxiv preprint referenced at the top of this README.
 
-#### Specifying number of threads
+### Specifying number of threads
 CRSSANT runs using a default of 8 threads in parallel. The user may specify a different number of threads with the `-n` flag.
 
-### Outputs
+## Outputs
 CRSSANT produces up to five output files with the following extensions added to the reads (or combined normal reads and chimeric reads) file(s) name. After the DG clustering step, CRSSANT verifies that the DGs do not contain any non-overlapping reads, i.e. any reads where the start position of its left arm is greater than or equal to the stop position of the right arm of any other read in the DG. If the DGs do not contain any non-overlapping reads, then the following output files ending in the following are written:
 
 1. `_CRSSANT.sam`: SAM file containing reads that were successfully assigned to DGs, plus DG and non-overlapping group (NG) annotations
@@ -98,6 +107,8 @@ where
 * `UU_cl` and `UC_cl` are the number of staggered uridine and uridine-cytosine base pairs, respectively, in the SG stem structure
 * `stem_length` is the length of SG stem structure
 * `_min`, `_max`, `_std` are the minimum arm index, maximum arm index, and standard deviation of all start and stop indices of the SG arms
+
+## Misc
 
 ### Creating a `reference.bed` file
 CRSSANT assumes that the `reference.bed` file contains minimal gene information in the following 6-column format:
