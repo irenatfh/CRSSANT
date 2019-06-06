@@ -8,9 +8,9 @@ CRSSANT is written in Python and available as source code that you can download 
 For more about the CRSSANT pipeline, please see the [bioRxiv preprint by Fischer-Hwang et al.](LINKLINKLINK).
 
 ## Contents
-* [Download](https://github.com/ihwang/CRSSANT#ownload)
+* [Download](https://github.com/ihwang/CRSSANT#download)
 * [Run](https://github.com/ihwang/CRSSANT#run)
-* [Outputs](https://github.com/ihwang/CRSSANT#output)
+* [Outputs](https://github.com/ihwang/CRSSANT#outputs)
 * [Misc](https://github.com/ihwang/CRSSANT#misc)
 * [Test](https://github.com/ihwang/CRSSANT#test)
 
