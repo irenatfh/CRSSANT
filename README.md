@@ -44,37 +44,37 @@ The input to CRSSANT is assumed to be a SAM file of aligned sequencing reads pro
 By default, the CRSSANT pipeline analyzes all reads in a SAM file. The pipeline uses the spectral clustering method to cluster reads into DGs with overlap threshold parameter of `t_o=0.5` and eigenratio threshold of `t_eig=5`, and uses 8 threads for parallel processing. The following parameters allow the user to run CRSSANT using options different from the default ones.
 
 ### Output folder
-The CRSSANT pipeline automatically writes all results to the same path where the reads file is found, but an output path may be specified with the `-o` flag:
+The CRSSANT pipeline automatically writes all results to the same path where the reads file is found, but an output path may be specified with the `-out` flag:
 ```
-CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -o output
+CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -out output
 ```
 
 ### Chimeric reads file
-The CRSSANT pipeline assumes that all reads in the input SAM file map to a single reference genome location. Reads that map to multiple locations within the same genomic region, or chimeric reads, can be specified using the chimeric reads file flag, `-c`. When using the `-c` flag, the `reads.sam` file is assumed to contain only normally-aligned reads that were mapped to a single reference genome location, as indicated with an `XG:i:0` tag. Using the `-c` flag will create and save a new SAM file with filename ending in `_chimeric.sam` in the `reads.sam` file path. All parsed chimeric reads added to this new file will contain a new chiastic group (XG) field designation, an `XG:i:1` tag. The CRSSANT analysis pipeline is then run on the new file.
+The CRSSANT pipeline assumes that all reads in the input SAM file map to a single reference genome location. Reads that map to multiple locations within the same genomic region, or chimeric reads, can be specified using the chimeric reads file flag, `-chimeric`. When using the `-chimeric` flag, the `reads.sam` file is assumed to contain only normally-aligned reads that were mapped to a single reference genome location, as indicated with an `XG:i:0` tag. Using the `-chimeric` flag will create and save a new SAM file with filename ending in `_chimeric.sam` in the `reads.sam` file path. All parsed chimeric reads added to this new file will contain a new chiastic group (XG) field designation, an `XG:i:1` tag. The CRSSANT analysis pipeline is then run on the new file.
 
-To specify a chimeric reads file, run with flag `-c`:
+To specify a chimeric reads file, run with flag `-chimeric`:
 ```
-CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -c chimeric.sam -o output
+CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -chimeric chimeric.sam -out output
 ```
 
 ### Genes for analysis
-By default, CRSSANT analyzes all possible pairs of genes present in the SAM file. The user may also specify a particular pair of genes for analysis using the gene flag `-g`, e.g. `-g gene1,gene2` indicates that the CRSSANT pipeline should analyze only reads whose left arms map to gene1 and whose right arms map to gene2.
+By default, CRSSANT analyzes all possible pairs of genes present in the SAM file. The user may also specify a particular pair of genes for analysis using the gene flag `-genes`, e.g. `-genes gene1,gene2` indicates that the CRSSANT pipeline should analyze only reads whose left arms map to gene1 and whose right arms map to gene2.
 
-To run CRSSANT on a particular gene pair of interest, run with flag `-g`:
+To run CRSSANT on a particular gene pair of interest, run with flag `-genes`:
 ```
-CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -g g1,g2 -o output
+CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -genes g1,g2 -out output
 ```
 
 ### Clustering method
 The default spectral clustering method may be operated with different overlap threshold and eigenratio threshold parameters by specifying one or both with the flags `t_o` and `t_eig`, respectively. `t_o` may be any float between 0 and 1, and `t_eig` may be any positive number. Increasing `t_o` tends to result in more DGs that contain fewer reads, and increasing `t_eig` tends to result in fewer DGs containing more reads. For example, the following command runs CRSSANT with spectral clustering using overlap threshold 0.6 and eigenratio threshold 8:
 ```
-CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -t_o 0.7 -t_eig 8 -o output
+CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -t_o 0.7 -t_eig 8 -out output
 ```
 
 The user may also specify the cliques-finding method for clustering DGs by specifying the clustering flag `cluster` with the `cliques` option, e.g. `-cluster cliques`. If the cliques-finding method is specified, `t_o` may also be specified, and again may be any float between and 1. The eigenvalue threshold `t_eig` is not used in the cliques-finding method. By default, for the cliques-finding method the overlap threshold is set to 0.1. For example, the following command runs CRSSANT on reads whose arms both map to gene1, and performs DG clustering with the cliques-finding method using overlap threshold 0.3:
 
 ```
-CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -g gene1,gene1 -cluster cliques -t_o 0.3 -o output
+CRSSANT_path/CRSSANT reads.sam reference.fa reference.bed -genes gene1,gene1 -cluster cliques -t_o 0.3 -out output
 ```
 
 For more on these parameters, see the bioRxiv preprint referenced at the top of this README.
@@ -143,9 +143,9 @@ You can test CRSSANT using a collection of Homo sapiens ribosomal RNA (rRNA) tes
 
 Run CRSSANT on all rRNA genes in region hs54S:
 ```
-CRSSANT_path/CRSSANT tests/hsrRNA_reads.sam tests/hsrRNA.fa tests/hsrRNA_gene.bed -o output
+CRSSANT_path/CRSSANT tests/hsrRNA_reads.sam tests/hsrRNA.fa tests/hsrRNA_gene.bed -out output
 ```
 or analyze specific genes, e.g. only reads whose left arms map to gene 5.8S and whose right arms map to gene 28S:
 ```
-CRSSANT_path/CRSSANT tests/hsrRNA_reads.sam tests/hsrRNA.fa tests/hsrRNA_gene.bed -g 5.8S,28S -o output
+CRSSANT_path/CRSSANT tests/hsrRNA_reads.sam tests/hsrRNA.fa tests/hsrRNA_gene.bed -genes 5.8S,28S -out output
 ```
