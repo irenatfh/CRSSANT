@@ -23,23 +23,7 @@ def run_analysis(args):
     sg_reads_dict = None
     sg_dict = None
     l_gene, r_gene, reads_dict, region, region_seq, \
-    c, t_o, t_eig, path, reads = args
-
-    
-    # Initalize outputs
-    file_name = reads.split('/')[-1].split('.sam')[0]
-    file_base = '/%s_CRSSANT.g%s,%s' %(file_name, l_gene, r_gene)
-    if c == 'cliques':
-        clustering_str = '%s.t_o%s' %(c, t_o)
-    else:
-        clustering_str = '%s.t_o%s.t_eig%s' %(c, t_o, t_eig)
-    file_base += '.%s' %clustering_str
-    out_sam = path + file_base + '.sam'
-    out_dg = path + file_base +  '_dg.bed'
-    out_sg_arc = path + file_base + '_sg_arc.bed'
-    out_sg_bp = path + file_base + '_sg_bp.bed'
-    out_sg = path + file_base + '_sg.aux'
-    
+    cluster, t_o, t_eig, path, reads = args    
     
     # Run analysis
     gene_ids = [
@@ -51,7 +35,7 @@ def run_analysis(args):
         'mapped to gene %s' %(len(gene_ids), l_gene, r_gene)
     )
     graph = gp.graph_reads(gene_ids, reads_dict, t=t_o)
-    if c == 'cliques':
+    if cluster == 'cliques':
         reads_dg_dict = gp.get_cliques(graph)
     else:
         reads_dg_dict = gp.cluster_graph(graph, t=t_eig)
@@ -80,24 +64,42 @@ def run_analysis(args):
             )
             return
         else:
-            # Output SAM file and dg file
-            pp.init_outputs(reads, out_sam, out_dg, out_sg_arc, out_sg_bp, out_sg)
+            # Initalize DG files and output SAM and DG files
+            file_name = reads.split('/')[-1].split('.sam')[0]
+            file_base = '/%s_CRSSANT.g%s,%s' %(file_name, l_gene, r_gene)
+            if cluster == 'cliques':
+                clustering_str = '%s.t_o%s' %(cluster, t_o)
+            else:
+                clustering_str = '%s.t_o%s.t_eig%s' %(cluster, t_o, t_eig)
+            file_base += '.%s' %clustering_str
+            out_sam = path + file_base + '.sam'
+            out_dg = path + file_base +  '_dg.bed'
+            pp.init_dg_outputs(reads, out_sam, out_dg)
             op.write_dg_ng_sam(
                 reads, out_sam, dg_reads_dict, dg_stats_dict
             )
             op.write_dg(out_dg, dg_stats_dict, region)
-            sg_reads_dict = sa.dg_to_sg_dict(dg_filtered_dict, reads_dict)
-            sg_stats_dict = sa.create_sg_dict(
-                sg_reads_dict, reads_dict, region_seq
-            )
-            if sg_stats_dict:
-                # Write remaining output files
-                op.write_sg_bp(out_sg_bp, sg_stats_dict, region)
-                op.write_sg_arc(out_sg_arc, sg_stats_dict, region)
-                op.write_sg(
-                    out_sg, sg_stats_dict, sg_reads_dict, dg_stats_dict, 
-                    reads_dict
+            
+            for ptile in range(10,100,10):
+                # Initialize SG files
+                out_sg_arc = path + file_base + '_sg_p%d_arc.bed' %ptile
+                out_sg_bp = path + file_base + '_sg_p%d_bp.bed' %ptile
+                out_sg = path + file_base + '_sg_p%d.aux' %ptile
+                cutoff_length, sg_reads_dict = sa.dg_to_sg_dict(
+                    dg_filtered_dict, reads_dict, ptile
                 )
+                sg_stats_dict = sa.create_sg_dict(
+                    sg_reads_dict, reads_dict, region_seq
+                )
+                if sg_stats_dict:
+                    # Output SG files
+                    pp.init_sg_outputs(out_sg_arc, out_sg_bp, out_sg)
+                    op.write_sg_bp(out_sg_bp, sg_stats_dict, region)
+                    op.write_sg_arc(out_sg_arc, sg_stats_dict, region)
+                    op.write_sg(
+                        out_sg, sg_stats_dict, sg_reads_dict, dg_stats_dict, 
+                        reads_dict
+                    )
     gene_stop = datetime.datetime.now()
     gene_time = gene_stop - gene_start
     print(

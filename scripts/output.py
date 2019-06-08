@@ -108,8 +108,7 @@ def write_sg(
 ):
     with open(sg_file, 'a') as f:
         for (dg, dg_info) in dg_dict.items():
-            coverage = dg_info['coverage']
-            dg_str = 'Group_%d_%.16f' %(dg, coverage)
+            dg_str = 'Group_%d' %(dg)
             line = [dg_str]
             
             

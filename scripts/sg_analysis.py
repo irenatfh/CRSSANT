@@ -52,7 +52,6 @@ def dg_to_sg_dict(dg_filtered_dict, reads_dict, p=90):
     all_arm_lengths = np.array(list(itertools.chain(*all_arm_lengths)))
     cutoff_length = np.percentile(all_arm_lengths, p)
     
-    
     # Filter out reads that have either arm longer than the cutoff
     sg_reads_dict = {}
     for (dg, dg_reads) in dg_filtered_dict.items():
@@ -70,7 +69,7 @@ def dg_to_sg_dict(dg_filtered_dict, reads_dict, p=90):
                 ]
         if len(filtered_reads) > 0:
             sg_reads_dict[dg] = filtered_reads
-    return sg_reads_dict
+    return cutoff_length, sg_reads_dict
 
 
 def create_sg_dict(sg_reads_dict, reads_dict, ref_seq):

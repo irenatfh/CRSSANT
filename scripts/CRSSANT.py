@@ -42,13 +42,15 @@ def parse_args():
         help='Path to file listing genes in reference sequence (BED)'
     )
     parser.add_argument(
-        'out',
+        '-out',
         help='Path of output'
     )
-    # parser.add_argument('-c', '--chimeric',  
-    #                     help='Path to chimeric PARIS reads file (SAM)')
     parser.add_argument(
-        '-g',
+        '-chimeric',
+        help='Path to chimeric PARIS reads file (SAM)'
+    )
+    parser.add_argument(
+        '-genes',
         help='Genes of interest (separated only by commas)'
     )
     parser.add_argument(
@@ -76,10 +78,13 @@ def parse_args():
 def main():
     args = parse_args()
     ##### Preprocessing
-    # 1) Read in reference dictionary and parse reads. Check that SAM file
-    # contains only one genomic region
+    # 1a) Read in reference dictionary and parse reads
     ref_dict = pp.get_reference_dict(args.ref_seq, args.ref_genes)
+    # 1b) Check for chimeric reads
+    if args.chimeric:
+        reads = pp.combine_aligned_and_chimeric_reads(args.reads, args.chimeric)
     reads_dict, regions_readgenes_dict = pp.parse_reads(args.reads, ref_dict)
+    # 1c) Check that SAM file contains only one genomic region
     if len(regions_readgenes_dict.keys()) == 1:
         region = list(regions_readgenes_dict.keys())[0]
         analysis_genes = regions_readgenes_dict[region]
@@ -89,8 +94,8 @@ def main():
             'contains reads mapped to only one genomic region'
         )
     # 2) Check genes arguments
-    if args.g:
-        l_gene, r_gene = args.g.split(',')
+    if args.genes:
+        l_gene, r_gene = args.genes.split(',')
         if (l_gene, r_gene) in regions_readgenes_dict.get(region):
             analysis_genes = set([(l_gene, r_gene)])
         else:
